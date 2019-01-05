@@ -1,0 +1,11 @@
+CFBundleName = touchjs;
+CFBundleDisplayName = TouchJS;
+CFBundleIdentifier = "org.subforge.touchjs";
+CFBundleExecutable = touchjs;
+
+CFBundleVersion = "0.0.1";
+CFBundleInfoDictionaryVersion = "6.0";
+CFBundlePackageType = APPL;
+CFBundleSignature = xxxx;
+
+LSMinimumSystemVersion = "10.12.0";
