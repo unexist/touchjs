@@ -84,7 +84,8 @@ typedef struct dukbutton_t {
         NSLog(@"button: name=%@, idx=%d", button->title, button->idx);
 
         duk_get_global_string(_ctx, [button->identifier UTF8String]);
-        duk_pcall(_ctx, 0);
+        duk_push_int(_ctx, idx);
+        duk_pcall(_ctx, 1);
     }
 }
 
@@ -153,7 +154,7 @@ typedef struct dukbutton_t {
     NSCustomTouchBarItem *item = [[NSCustomTouchBarItem alloc] 
         initWithIdentifier:kGroupButton];
 
-    item.view = [NSButton buttonWithTitle:@"\U0001F4A9\U0001F4A9" 
+    item.view = [NSButton buttonWithTitle:@"\U0001F4A9" 
         target:self action:@selector(present:)];
 
     [NSTouchBarItem addSystemTrayItem:item];
@@ -196,9 +197,11 @@ static duk_ret_t duk_create_button(duk_context *ctx) {
     button->identifier = [NSString stringWithFormat: 
         @"org.subforge.b%d", button->idx];
     
-    [_items addObject: [NSValue value: &button withObjCType: @encode(DukButton *)]];
+    [_items addObject: [NSValue value: &button 
+        withObjCType: @encode(DukButton *)]];
 
-    NSLog(@"duk_create_button: name=%@, idx=%d", button->title, button->idx);
+    NSLog(@"duk_create_button: name=%@, idx=%d", 
+        button->title, button->idx);
 
     duk_push_int(_ctx, button->idx);
 
@@ -217,7 +220,8 @@ static duk_ret_t duk_bind_button(duk_context *ctx) {
     DukButton *button = [[_items objectAtIndex: idx] pointerValue];
 
     if (nil != button) {
-        NSLog(@"duk_bind_button: name=%@, idx=%d",  button->title, button->idx);
+        NSLog(@"duk_bind_button: name=%@, idx=%d", 
+            button->title, button->idx);
         
         duk_require_function(_ctx, 1);
         duk_dup_top(_ctx);
