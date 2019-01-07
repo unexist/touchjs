@@ -183,11 +183,22 @@ typedef struct dukbutton_t {
 @end
 
 /**
- * Create touchbar button from JS
+ * Native button constructor
+ *
+ * @param[inout]  ctx  A #duk_context
  **/
 
-static duk_ret_t duk_create_button(duk_context *ctx) {
-    const char *title = duk_safe_to_string(_ctx, -1);
+static duk_ret_t tjs_button_ctor(duk_context *ctx) {
+    /* Get arguments */
+    const char *title = duk_require_string(_ctx, -1);
+    int idx = [_items count];
+
+    /* Set properties */
+    duk_push_this(ctx);
+    duk_push_int(ctx, idx);
+    duk_put_prop_string(ctx, -2, "idx");
+    duk_push_string(ctx, title);
+    duk_put_prop_string(ctx, -2, "title");
 
     /* Create new button */
     DukButton *button = (DukButton *)calloc(1, sizeof(DukButton));
@@ -196,23 +207,39 @@ static duk_ret_t duk_create_button(duk_context *ctx) {
     button->title = [NSString stringWithUTF8String: title];
     button->identifier = [NSString stringWithFormat: 
         @"org.subforge.b%d", button->idx];
+
+    /* Store pointer ref on stash */
+    duk_push_global_stash(ctx);
+    duk_push_pointer(ctx, (void *) button);
+    duk_put_prop_string(ctx, -2, "userdata"):
     
+    /* Store button in array */
     [_items addObject: [NSValue value: &button 
         withObjCType: @encode(DukButton *)]];
 
-    NSLog(@"duk_create_button: name=%@, idx=%d", 
+    NSLog(@"tjs_button_constructor: name=%@, idx=%d", 
         button->title, button->idx);
 
-    duk_push_int(_ctx, button->idx);
-
-    return 1;
+    return 0;
 }
 
 /**
- * Add button to touchbar from JS
+ * Native button destructor
+ *
+ * @param[inout]  ctx  A #duk_context
  **/
 
-static duk_ret_t duk_bind_button(duk_context *ctx) {
+static duk_ret_t tjs_button_dtor(duk_context *ctx) {
+    /* Nothing to do yet */
+}
+
+/**
+ * Native button event binder
+ *
+ * @param[inout]  ctx  A #duk_context
+ **/
+
+static duk_ret_t tjs_button_bind(duk_context *ctx) {
     int idx = duk_require_int(_ctx, 0);
 
     NSLog(@"duk_bind_button: idx=%d",  idx);
@@ -231,19 +258,67 @@ static duk_ret_t duk_bind_button(duk_context *ctx) {
     return 0;
 }
 
+ /**
+  * Native button printer
+  *
+  * @param[inout]  ctx  A #duk_context
+  **/
+
+static duk_ret_t tjs_button_print(duk_context *ctx) {
+    duk_push_this(ctx);
+
+    /* Get idx */
+    duk_get_prop_string(ctx, -1, "idx");
+    int idx = duk_to_int(ctx, -1);
+
+    /* Get title */
+    duk_get_prop_string(ctx, -1, "title");
+    const char *title = duk_safe_to_string(ctx, -1);
+
+    NSLog(@"tjs_button_print: name=%@, idx=%d", title, idx);
+
+    return 0;
+}
+
+/**
+ * Init button
+ **/
+
+static void tjs_button_init(duk_context *ctx) {
+    /* Register constructor */
+    duk_push_c_function(ctx, tjs_button_ctor, 1);
+    duk_push_object(ctx);
+
+    /* Register destructor */
+    duk_push_c_function(ctx, tjs_button_dtor);
+    duk_set_finalizer(ctx, -2);
+
+    /* Register methods */
+    duk_push_c_function(ctx, tjs_button_bind, 1);
+    duk_put_prop_string(ctx, -2 "bind")
+
+    duk_push_c_function(ctx, tjs_button_print, 1);
+    duk_put_prop_string(ctx, -2 "print")
+}
+
 /**
  * Print string from JS
  **/
 
-static duk_ret_t duk_print(duk_context *ctx) {
+static duk_ret_t tjs_global_print(duk_context *ctx) {
     /* Join string on stack */
 	duk_push_string(_ctx, " ");
 	duk_insert(_ctx, 0);
 	duk_join(_ctx, duk_get_top(ctx) - 1);
 
-    NSLog(@"duk_print: %s", duk_safe_to_string(_ctx, -1));
+    NSLog(@"tjs_print: %s", duk_safe_to_string(_ctx, -1));
 
     return 0;
+}
+
+static void tjs_global_init(duk_context *ctx) {
+    duk_push_c_function(ctx, tjx_global_print, DUK_VARARGS);
+    duk_put_global_string(ctx, "tjs_print");
 }
 
 /**
@@ -295,12 +370,8 @@ int main(int argc, char *argv[]) {
     _ctx = duk_create_heap_default();
 
     /* Register functions */
-    duk_push_c_function(_ctx, duk_create_button, 1);
-    duk_put_global_string(_ctx, "duk_create_button");
-    duk_push_c_function(_ctx, duk_bind_button, 2);
-    duk_put_global_string(_ctx, "duk_bind_button");
-    duk_push_c_function(_ctx, duk_print, DUK_VARARGS);
-    duk_put_global_string(_ctx, "duk_print");
+    tjs_button_init(ctx);
+    tjs_global_init();
 
     /* Source file if any */
     if (1 < argc) {
