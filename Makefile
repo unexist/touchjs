@@ -23,11 +23,11 @@ $(OUT): $(OBJECTS)
 	$(CC) -c $(CFLAGS) $< -o $@
 
 .c.o:
-	$(CC) -c $(CFLAGS) $< -o $@
+	$(CC) -c $(CFLAGS) -DDUK_USE_DEBUG -DDUK_USE_DEBUG_LEVEL=0 $< -o $@
 
 kill:
 	@pkill $(OUT) ; true
 
 clean:
-	@rm -f *~ $(OUT) *.o
+	@rm -f *~ $(OUT) $(OBJECTS)
 	@rm -rf "$(BUNDLE)"
