@@ -1,10 +1,23 @@
 CC=clang
 FRAMEWORKS=-framework Cocoa -framework DFRFoundation -F /System/Library/PrivateFrameworks
-CFLAGS=-mmacosx-version-min=10.12 -x objective-c
+
 INCLUDES=-Isrc/duktape
+CFLAGS=-mmacosx-version-min=10.12 -x objective-c
 LDFLAGS=-fobjc-link-runtime -lm $(FRAMEWORKS)
-SOURCES=src/touchjs.m src/duktape/duktape.c
-OBJECTS=src/touchjs.o src/duktape/duktape.o
+
+SOURCES= \
+	src/touchjs.m \
+	src/global.m \
+	src/controls/control.m \
+	src/controls/userdata.m \
+	src/controls/button.m \
+	src/controls/label.m \
+	src/controls/slider.m \
+	src/duktape/duktape.c
+
+TEMP=$(SOURCES:.m=.o)
+OBJECTS=$(TEMP:.c=.o)
+
 OUT=touchjs
 BUNDLE=touchjs.app
 

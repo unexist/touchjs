@@ -20,9 +20,12 @@ var b3 = new TjsButton("Green")
         tjs_quit();
     });
 
+var s1 = new TjsSlider("Slider");
+
 
 /* Dump */
 tjs_print(l1);
 tjs_print(b1);
 tjs_print(b2);
 tjs_print(b3);
+tjs_print(s1);
