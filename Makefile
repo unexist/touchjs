@@ -7,9 +7,9 @@ LDFLAGS=-fobjc-link-runtime -lm $(FRAMEWORKS)
 
 SOURCES= \
 	src/touchjs.m \
+	src/command.m \
 	src/global.c \
 	src/userdata.c \
-	src/command.c \
 	src/controls/super.c \
 	src/controls/label.c \
 	src/controls/button.c \
