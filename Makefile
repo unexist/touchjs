@@ -7,12 +7,13 @@ LDFLAGS=-fobjc-link-runtime -lm $(FRAMEWORKS)
 
 SOURCES= \
 	src/touchjs.m \
-	src/global.m \
-	src/controls/control.m \
-	src/controls/userdata.m \
-	src/controls/button.m \
-	src/controls/label.m \
-	src/controls/slider.m \
+	src/global.c \
+	src/userdata.c \
+	src/command.c \
+	src/controls/super.c \
+	src/controls/label.c \
+	src/controls/button.c \
+	src/controls/slider.c \
 	src/duktape/duktape.c
 
 TEMP=$(SOURCES:.m=.o)
