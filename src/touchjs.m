@@ -10,6 +10,46 @@
  **/
 
 #import "touchjs.h"
+#import <Cocoa/Cocoa.h>
+
+/* Constants */
+static const NSTouchBarItemIdentifier kGroupButton = @"org.subforge.group";
+static const NSTouchBarItemIdentifier kQuit = @"org.subforge.quit";
+
+/* Forward declarations */
+extern void DFRElementSetControlStripPresenceForIdentifier(NSString *, BOOL);
+extern void DFRSystemModalShowsCloseBoxWhenFrontMost(BOOL);
+
+/* Types */
+typedef struct tjs_touch_t {
+    int flags;
+
+    TjsUserdata *userdata;
+
+    /* Obj-c */
+    NSTouchBarItemIdentifier identifier;
+    NSView *view;
+} TjsTouch;
+
+/* Interfaces */
+@interface NSTouchBarItem ()
++ (void)addSystemTrayItem:(NSTouchBarItem *)item;
+@end
+
+@interface NSTouchBar ()
+/* macOS 10.14 and above */
++ (void)presentSystemModalTouchBar:(NSTouchBar *)touchBar systemTrayItemIdentifier:(NSTouchBarItemIdentifier)identifier NS_AVAILABLE_MAC(10.14);
+
+/* macOS 10.13 and below */
++ (void)presentSystemModalFunctionBar:(NSTouchBar *)touchBar systemTrayItemIdentifier:(NSTouchBarItemIdentifier)identifier NS_DEPRECATED_MAC(10.12.2, 10.14);
+@end
+
+@interface AppDelegate : NSObject <NSApplicationDelegate, NSTouchBarDelegate>
+@end
+
+/* Globals */
+NSTouchBar *_groupTouchBar;
+NSMutableArray *_touchbarControls;
 
 @implementation AppDelegate
 
@@ -20,7 +60,7 @@
 - (NSTouchBar *)groupTouchBar {
     NSMutableArray *array;
 
-    NSLog(@"groupTouchbar");
+    TJS_LOG_DEBUG("");
 
     /* Create if required */
     if (!_groupTouchBar) {
@@ -41,9 +81,9 @@
 
     /* Collect identifiers */
     for (int i = 0; i < [_touchbarControls count]; i++) {
-        TjsControl *control = [[_touchbarControls objectAtIndex: i] pointerValue];
+        TjsTouch *touch = [[_touchbarControls objectAtIndex: i] pointerValue];
 
-        [array addObject: control->identifier];
+        [array addObject: touch->identifier];
     }
 
     [array addObject: kQuit];
@@ -68,28 +108,55 @@
 - (void)button:(id)sender {
     int idx = [sender tag];
 
-    TjsControl *control = [[_touchbarControls objectAtIndex: idx] pointerValue];
+    /* Get touch item */
+    TjsTouch *touch = [[_touchbarControls objectAtIndex: idx] pointerValue];
 
-    if (nil != control) {
-        NSLog(@"idx=%d, name=%s", control->idx, control->title);
+    if (nil != touch && nil != touch->userdata) {
+        TjsWidget *widget = (TjsWidget *)touch->userdata;
 
-        /* Get object and call click */
-        duk_get_global_string(_ctx, [control->identifier UTF8String]);
+        TJS_LOG_DEBUG("flags=%d, idx=%d", widget->flags, idx);
 
-        TJS_DSTACK(_ctx);
+        /* Get object and call callback */
+        duk_get_global_string(_ctx, [touch->identifier UTF8String]);
 
         if (duk_is_object(_ctx, -1)) {
-            tjs_button_helper_click(_ctx);
+            tjs_super_callback_call(_ctx, TJS_SYM_CLICK_CB, 0);
         }
     }
 }
 
 /**
- * Handle send event: button
+ * Handle send event: slider
  **/
 
 - (void)slider:(id)sender {
     int idx = [sender tag];
+
+    /* Get touch item */
+    TjsTouch *touch = [[_touchbarControls objectAtIndex: idx] pointerValue];
+
+    if (nil != touch && nil != touch->userdata) {
+        TjsWidget *widget = (TjsWidget *)touch->userdata;
+
+        TJS_LOG_DEBUG("flags=%d, idx=%d", widget->flags, idx);
+
+        /* Update value */
+        NSSlider *slider = (NSSlider *)sender;
+
+        double value = [slider doubleValue];
+
+        if (0 < (widget->flags & TJS_FLAG_TYPE_SLIDER)) {
+            widget->value.asInt = value;
+        }
+
+        /* Get object and call callback */
+        duk_get_global_string(_ctx, [touch->identifier UTF8String]);
+
+        if (duk_is_object(_ctx, -1)) {
+            duk_push_int(_ctx, value);
+            tjs_super_callback_call(_ctx, TJS_SYM_SLIDE_CB, 1);
+        }
+    }
 }
 
 /**
@@ -121,32 +188,39 @@
 
         item.view = [NSButton buttonWithTitle:@"Quit"
             target:[NSApplication sharedApplication]
-            action:@selector(terminate:)];
+            action: @selector(terminate:)];
     } else {
         /* Create custom controls */
         for (int i = 0; i < [_touchbarControls count]; i++) {
-            TjsControl *control = [[_touchbarControls objectAtIndex: i] pointerValue];
+            TjsTouch *touch = [[_touchbarControls objectAtIndex: i] pointerValue];
 
-            if ([identifier isEqualToString: control->identifier]) {
+            if ([identifier isEqualToString: touch->identifier]) {
+                TjsWidget *widget = (TjsWidget *)touch->userdata;
+
                 item = [[NSCustomTouchBarItem alloc]
-                    initWithIdentifier: control->identifier];
+                    initWithIdentifier: touch->identifier];
 
                 /* Create type */
-                if (0 < (control->flags & TJS_FLAG_TYPE_BUTTON)) { ///< TjsButton
-                    item.view = control->view = [NSButton buttonWithTitle:
-                        [NSString stringWithUTF8String: control->title]
+                if (0 < (widget->flags & TJS_FLAG_TYPE_LABEL)) { ///< TjsLabel
+                    item.view = touch->view = [NSTextField labelWithString:
+                        [NSString stringWithUTF8String: widget->value.asChar]];
+                } else if (0 < (widget->flags & TJS_FLAG_TYPE_BUTTON)) { ///< TjsButton
+                    item.view = touch->view = [NSButton buttonWithTitle:
+                        [NSString stringWithUTF8String: widget->value.asChar]
                         target: self action: @selector(button:)];
-                } else if (0 < (control->flags & TJS_FLAG_TYPE_LABEL)) { ///< TjsLabel
-                   item.view = control->view = [NSTextField labelWithString:
-                        [NSString stringWithUTF8String: control->title]];
-                } else if (0 < (control->flags & TJS_FLAG_TYPE_SLIDER)) { ///< TjsSlider
-                   item.view = control->view = [NSSlider sliderWithValue: 0 minValue: 0
-                        maxValue: 100 target: self action: @selector(slider:)];
+                } else if (0 < (widget->flags & TJS_FLAG_TYPE_SLIDER)) { ///< TjsSlider
+                    item.view = touch->view = [NSSlider sliderWithValue: widget->value.asInt
+                        minValue: 0 maxValue: 100 target: self action: @selector(slider:)];
+                } else {
+                    continue;
                 }
 
-                tjs_control_helper_update(control);
-
                 [item.view setTag: i];
+
+                /* Mark as ready and update it */
+                touch->flags |= TJS_FLAG_READY;
+
+                tjs_touch_update(touch->userdata);
             }
         }
     }
@@ -160,15 +234,14 @@
  * @param[inout]  aNotification  Notification sent to app
  **/
 
-- (void)applicationDidFinishLaunching:(NSNotification *)aNotification
-{
+- (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
     DFRSystemModalShowsCloseBoxWhenFrontMost(YES);
 
     NSCustomTouchBarItem *item = [[NSCustomTouchBarItem alloc]
-        initWithIdentifier:kGroupButton];
+        initWithIdentifier: kGroupButton];
 
     item.view = [NSButton buttonWithTitle:@"\U0001F4A9"
-        target:self action:@selector(present:)];
+        target: self action: @selector(present:)];
 
     [NSTouchBarItem addSystemTrayItem:item];
 
@@ -188,10 +261,10 @@
 
     /* Tidy up items */
     for (int i = 0; i < [_touchbarControls count]; i++) {
-        TjsControl *control = [[_touchbarControls objectAtIndex: i] pointerValue];
+        TjsTouch *touch = [[_touchbarControls objectAtIndex: i] pointerValue];
 
-        free(control->title);
-        free(control);
+        tjs_userdata_free(touch->userdata);
+        free(touch);
     }
 }
 @end
@@ -203,13 +276,14 @@
 /**
  * Log handler
  *
- * @param[in]  func  Name of the calling function
- * @param[in]  line  Line number of the call
- * @param[in]  fmt   Message format
- * @param[in]  ...   Variadic arguments
+ * @param[in]  loglevel  Log level
+ * @param[in]  func      Name of the calling function
+ * @param[in]  line      Line number of the call
+ * @param[in]  fmt       Message format
+ * @param[in]  ...       Variadic arguments
  **/
 
-void tjs_log(const char *func, int line, const char *fmt, ...) {
+void tjs_log(int loglevel, const char *func, int line, const char *fmt, ...) {
     va_list ap;
     char buf[255];
     int guard;
@@ -219,7 +293,19 @@ void tjs_log(const char *func, int line, const char *fmt, ...) {
     vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
 
-    NSLog(@"%s@%d: %s", func, line, buf);
+    switch (loglevel) {
+        case TJS_LOGLEVEL_INFO:
+            NSLog(@"[INFO] %s", buf);
+            break;
+        case TJS_LOGLEVEL_ERROR:
+            NSLog(@"[ERROR %s:%d] %s", func, line, buf);
+            break;
+        case TJS_LOGLEVEL_DEBUG:
+            NSLog(@"[DEBUG %s:%d] %s", func, line, buf);
+            break;
+        case TJS_LOGLEVEL_DUK:
+            NSLog(@"[DUK %s:%d] %s", func, line, buf);
+    }
 }
 
 /**
@@ -232,7 +318,7 @@ void tjs_log(const char *func, int line, const char *fmt, ...) {
 void tjs_fatal(void *userdata, const char *msg) {
     (void) userdata; ///< Not unused anymore..
 
-    NSLog(@"*** FATAL ERROR: %s", (msg ? msg : "No message"));
+    TJS_LOG_DUK("Fatal error: %s", (msg ? msg : "No message"));
 
     abort();
 }
@@ -246,10 +332,179 @@ void tjs_fatal(void *userdata, const char *msg) {
 void tjs_dump_stack(const char *func, int line, duk_context *ctx) {
     duk_push_context_dump(ctx);
 
-    NSLog(@"%s@%d: %s", func, line, duk_safe_to_string(ctx, -1));
+    TJS_LOG_DUK("%s", duk_safe_to_string(ctx, -1));
 
     duk_pop(ctx);
 }
+
+/**
+ * Terminate app
+ **/
+
+void tjs_exit() {
+    [NSApp terminate: nil];
+}
+
+/******************************
+ *           Touch            *
+ ******************************/
+
+/**
+ * Find touchbar item based on userdata
+ *
+ * @param[in]  userdata  A #TjsUserdata
+ *
+ * @return Either found #TjsTouch; otherwise nil
+ **/
+
+static TjsTouch *tjs_touch_find(TjsUserdata *userdata) {
+    for (int i = 0; i < [_touchbarControls count]; i++) {
+        TjsTouch *touch = [[_touchbarControls objectAtIndex: i] pointerValue];
+
+        if (touch->userdata == userdata) {
+            return touch;
+        }
+    }
+
+    return nil;
+}
+
+/**
+ * Add item to touchbar
+ *
+ * @param[inout]  userdata  A #TjsUserdata
+ **/
+
+void tjs_touch_add(TjsUserdata *userdata) {
+    if (nil != userdata) {
+        TJS_LOG_DEBUG("flags=%d", userdata->flags);
+
+        /* Create new touch */
+        TjsTouch *touch = (TjsTouch *)calloc(1, sizeof(TjsTouch));
+
+        touch->userdata = userdata;
+        touch->identifier = [NSString stringWithFormat:
+            @"org.subforge.control%lu", [_touchbarControls count]];
+
+        /* Store in array */
+        [_touchbarControls addObject: [NSValue value: &touch
+            withObjCType: @encode(TjsTouch *)]];
+
+        /* Store global in context */
+        duk_push_this(_ctx);
+        duk_put_global_string(_ctx, [touch->identifier UTF8String]);
+    }
+}
+
+/**
+ * Update color of touch item
+ *
+ * @param[inout]  touch  A #TjsTouch
+ **/
+
+static void tjs_touch_update_color(TjsTouch *touch) {
+    TjsWidget *widget = (TjsWidget *)(touch->userdata);
+    TjsColor *col = nil;
+
+    /* Selct fg or bg */
+    if (0 < (widget->flags & TJS_FLAG_UPDATE_COLOR_FG)) {
+        col = &(widget->colors.fg);
+    } else {
+        col = &(widget->colors.bg);
+    }
+
+    /* Parse color */
+    NSColor *parsedCol = [NSColor
+        colorWithRed: ((float)(col->red) / 0xff)
+        green: ((float)(col->green) / 0xff)
+        blue: ((float)(col->blue) / 0xff)
+        alpha: 1.0f];
+
+    /* Handle widget types */
+    if (0 < (widget->flags & TJS_FLAG_UPDATE_COLOR_FG)) {
+        if (0 < (widget->flags & TJS_FLAG_TYPE_LABEL)) {
+            [((NSTextView *)(touch->view)) setTextColor: parsedCol];
+        }
+    } else {
+        if (0 < (widget->flags & TJS_FLAG_TYPE_BUTTON)) {
+            [((NSButton *)(touch->view)) setBezelColor: parsedCol];
+        } else if (0 < (widget->flags & TJS_FLAG_TYPE_SLIDER)) {
+            [((NSSlider *)(touch->view)) setTrackFillColor: parsedCol];
+            [((NSSlider *)(touch->view)) setNeedsDisplay];
+        }
+    }
+
+    /* Remove flags */
+    if (0 < (touch->flags & TJS_FLAG_READY)) {
+        widget->flags &= ~TJS_FLAGS_COLORS;
+    }
+}
+
+/**
+ * Update value of touch item
+ *
+ * @param[inout]  touch  A #TjsTouch
+ **/
+
+static void tjs_touch_update_value(TjsTouch *touch) {
+    TjsWidget *widget = (TjsWidget *)(touch->userdata);
+
+    /* Handle widget types */
+    if (0 < (widget->flags & TJS_FLAG_TYPE_SLIDER)) {
+        [((NSSlider *)(touch->view)) setDoubleValue: widget->value.asInt];
+    }
+
+    /* Remove flags */
+    if (0 < (touch->flags & TJS_FLAG_READY)) {
+        widget->flags &= ~TJS_FLAG_UPDATE_VALUE;
+    }
+}
+
+/**
+ * Helper to update view based on state
+ *
+ * @param[inout]  userdata  A #TjsUserdata
+ **/
+
+void tjs_touch_update(TjsUserdata *userdata) {
+    if (nil != userdata && 0 < (userdata->flags & TJS_FLAGS_WIDGETS)) {
+        TJS_LOG_DEBUG("flags=%d", userdata->flags);
+
+        /* Find touch */
+        TjsTouch *touch = tjs_touch_find(userdata);
+
+        if (nil != touch) {
+            if (0 < (userdata->flags & TJS_FLAGS_COLORS)) {
+                tjs_touch_update_color(touch);
+            }
+            if (0 < (userdata->flags & TJS_FLAG_UPDATE_VALUE)) {
+                tjs_touch_update_value(touch);
+            }
+        }
+    }
+}
+
+/**
+ * Remove touchbar item based on userdata
+ *
+ * @param[inout]  userdata  A #TjsUserdata
+ **/
+
+void tjs_touch_remove(TjsUserdata *userdata) {
+    if (nil != userdata) {
+        TJS_LOG_DEBUG("flags=%d", userdata->flags);
+
+        TjsTouch *touch = tjs_touch_find(userdata);
+
+        if (nil != touch) {
+
+        }
+    }
+}
+
+/******************************
+ *             I/O            *
+ ******************************/
 
 /**
  * Read file
@@ -259,14 +514,14 @@ void tjs_dump_stack(const char *func, int line, duk_context *ctx) {
  * @return Read content
  **/
 
-static char* readFileToCString(NSString *fileName) {
-    NSLog(@"Loading file %@", fileName);
+static char *tjs_read_file(NSString *fileName) {
+    TJS_LOG_INFO("Loading file %s", [fileName UTF8String]);
 
     /* Load file */
     NSFileHandle *file = [NSFileHandle fileHandleForReadingAtPath: fileName];
 
-    if (file == nil) {
-        NSLog(@"Failed to open file %@", fileName);
+    if (nil == file) {
+        TJS_LOG_ERROR("Failed to open file file %s", [fileName UTF8String]);
 
         return nil;
     }
@@ -300,20 +555,21 @@ int main(int argc, char *argv[]) {
     _ctx = duk_create_heap(nil, nil, nil, nil, tjs_fatal);
 
     /* Register functions */
+    tjs_global_init(_ctx);
+    tjs_command_init(_ctx);
     tjs_button_init(_ctx);
     tjs_label_init(_ctx);
     tjs_slider_init(_ctx);
-    tjs_global_init(_ctx);
 
     /* Source file if any */
     if (1 < argc) {
         NSString *fileName = [NSString stringWithUTF8String: argv[1]];
 
-        char *buffer = readFileToCString(fileName);
+        char *buffer = tjs_read_file(fileName);
 
         if (buffer) {
             /* Just eval the content */
-            NSLog(@"Executing file %@", fileName);
+            TJS_LOG_INFO("Executing file %s", argv[1]);
 
             duk_eval_string_noresult(_ctx, buffer);
         }
