@@ -88,13 +88,6 @@ typedef struct tjs_widget_t {
     union tjs_value_t value;
 } TjsWidget;
 
-typedef struct tjs_command_t {
-    int flags;
-
-    char *line;
-    union tjs_value_t value;
-} TjsCommand;
-
 /* Globals */
 duk_context *_ctx;
 
