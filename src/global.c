@@ -9,7 +9,7 @@
  * See the file COPYING for details.
  **/
 
-#import "touchjs.h"
+#include "touchjs.h"
 
 /**
  * Native print method
@@ -23,7 +23,7 @@ duk_ret_t tjs_global_print(duk_context *ctx) {
 	duk_insert(ctx, 0);
 	duk_join(ctx, duk_get_top(ctx) - 1);
 
-    TJS_LOG("%s", duk_safe_to_string(ctx, -1));
+    TJS_LOG_DUK("%s", duk_safe_to_string(ctx, -1));
 
     return 0;
 }
@@ -40,16 +40,12 @@ duk_ret_t tjs_global_rgb(duk_context *ctx) {
     duk_pop(ctx);
 
     if ('#' != hexcode[0]) {
-        return duk_error(ctx, DUK_ERR_TYPE_ERROR, "Invalid argument value: '%s'", hexcode);
+        return duk_error(ctx, DUK_ERR_TYPE_ERROR,
+            "Invalid argument value: '%s'", hexcode);
     }
 
     /* Convert string to hex */
-    unsigned int color = 0;
-
-    NSScanner *scanner = [NSScanner scannerWithString:
-        [NSString stringWithUTF8String: ++hexcode]]; ///< Skip prefix #
-
-    [scanner scanHexInt: &color];
+    unsigned int color = strtol(++hexcode, NULL, 16);
 
     /* Mask color values */
     unsigned char red = (unsigned char)(color >> 16);
@@ -59,14 +55,12 @@ duk_ret_t tjs_global_rgb(duk_context *ctx) {
     /* Push array */
     duk_idx_t idx = duk_push_array(ctx);
 
-    duk_push_number(ctx, red);
+    duk_push_int(ctx, red);
     duk_put_prop_index(ctx, idx, 0);
-    duk_push_number(ctx, green);
+    duk_push_int(ctx, green);
     duk_put_prop_index(ctx, idx, 1);
-    duk_push_number(ctx, blue);
+    duk_push_int(ctx, blue);
     duk_put_prop_index(ctx, idx, 2);
-
-    TJS_DSTACK(ctx);
 
     return 1;
 }
@@ -78,9 +72,9 @@ duk_ret_t tjs_global_rgb(duk_context *ctx) {
  **/
 
 duk_ret_t tjs_global_quit(duk_context *ctx) {
-    TJS_LOG("Exiting");
+    TJS_LOG_INFO("Exiting");
 
-    [NSApp terminate: nil];
+    tjs_exit();
 
     return 0;
 }
