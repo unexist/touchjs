@@ -142,7 +142,6 @@ static duk_ret_t tjs_super_dtor(duk_context *ctx) {
  **/
 
 void tjs_super_init(duk_context *ctx, TjsUserdata *userdata) {
-
     /* Register destructor */
     duk_push_this(ctx);
     duk_push_c_function(ctx, tjs_super_dtor, 0);
