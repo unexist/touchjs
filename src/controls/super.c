@@ -44,7 +44,8 @@ static duk_ret_t tjs_super_setcolor(duk_context *ctx, int flag) {
     int red = duk_require_int(ctx, -3);
 
     /* Get context */
-    TjsUserdata *userdata = tjs_userdata_get(ctx);
+    TjsUserdata *userdata = tjs_userdata_get(ctx,
+        TJS_FLAGS_WIDGETS);
 
     /* Get userdata */
     if (NULL != userdata) {
@@ -67,7 +68,7 @@ static duk_ret_t tjs_super_setcolor(duk_context *ctx, int flag) {
         color->green = green;
         color->blue = blue;
 
-        tjs_touch_update(userdata);
+        tjs_update(userdata);
     }
 
     /* Allow fluid.. */
@@ -84,7 +85,8 @@ static duk_ret_t tjs_super_setcolor(duk_context *ctx, int flag) {
 
 duk_ret_t tjs_super_prototype_tostring(duk_context *ctx) {
     /* Get userdata */
-    TjsUserdata *userdata = tjs_userdata_get(ctx);
+    TjsUserdata *userdata = tjs_userdata_get(ctx,
+        TJS_FLAGS_WIDGETS);
 
     if (NULL != userdata) {
         TJS_LOG_DEBUG("flags=%d", userdata->flags);
@@ -125,7 +127,8 @@ duk_ret_t tjs_super_prototype_setbgcolor(duk_context *ctx) {
 
 static duk_ret_t tjs_super_dtor(duk_context *ctx) {
     /* Get userdata */
-    TjsUserdata *userdata = tjs_userdata_get(ctx);
+    TjsUserdata *userdata = tjs_userdata_get(ctx,
+        TJS_FLAGS_WIDGETS);
 
     if (NULL != userdata) {
         TJS_LOG_DEBUG("flags=%d", userdata->flags);

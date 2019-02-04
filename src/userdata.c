@@ -39,16 +39,32 @@
  }
 
 /**
- * Get context from duktape object
+ * Get context from duktape object on stack
  *
- * @param[inout]  ctx  A #duk_context
+ * @param[inout]  ctx   A #duk_context
+ * @param[in]     flag  Flag to fetch
  *
  * @return Either #TjsUserdata on success; otherwise #null
  **/
 
-TjsUserdata *tjs_userdata_get(duk_context *ctx) {
+TjsUserdata *tjs_userdata_get(duk_context *ctx, int flag) {
     /* Get userdata and clear stack */
     duk_push_this(ctx);
+
+    return tjs_userdata_from(ctx, flag);
+}
+
+/**
+ * Get context from duktape object
+ *
+ * @param[inout]  ctx   A #duk_context
+ * @param[in]     flag  Flag to fetch
+ *
+ * @return Either #TjsUserdata on success; otherwise #null
+ **/
+
+TjsUserdata *tjs_userdata_from(duk_context *ctx, int flag) {
+    /* Get userdata and clear stack */
     duk_get_prop_string(ctx, -1, TJS_SYM_USERDATA);
 
     TjsUserdata *userdata = (TjsUserdata *)duk_get_pointer(ctx, -1);
@@ -56,8 +72,9 @@ TjsUserdata *tjs_userdata_get(duk_context *ctx) {
 
     TJS_LOG_DEBUG("flags=%d", userdata->flags);
 
-    return userdata;
+    return (0 < (userdata->flags & flag) ? userdata : NULL);
 }
+
 
 /**
  * Free userdata

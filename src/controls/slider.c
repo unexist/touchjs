@@ -36,7 +36,6 @@ static duk_ret_t tjs_slider_ctor(duk_context *ctx) {
     duk_pop(ctx);
 
     tjs_super_init(ctx, (TjsUserdata *)widget);
-    tjs_touch_add((TjsUserdata *)widget);
 
     TJS_LOG_DEBUG("flags=%d", widget->flags);
 
@@ -54,7 +53,8 @@ static duk_ret_t tjs_slider_prototype_bind(duk_context *ctx) {
     duk_require_function(ctx, -1);
 
     /* Get userdata */
-    TjsWidget *widget = (TjsWidget *)tjs_userdata_get(ctx);
+    TjsWidget *widget = (TjsWidget *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_SLIDER);
 
     if (NULL != widget) {
         TJS_LOG_DEBUG("flags=%d", widget->flags);
@@ -80,7 +80,8 @@ static duk_ret_t tjs_slider_prototype_bind(duk_context *ctx) {
 
 static duk_ret_t tjs_slider_prototype_getpercent(duk_context *ctx) {
     /* Get userdata */
-    TjsWidget *widget = (TjsWidget *)tjs_userdata_get(ctx);
+    TjsWidget *widget = (TjsWidget *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_SLIDER);
 
     if (NULL != widget) {
         TJS_LOG_DEBUG("flags=%d, percent=%d",
@@ -102,7 +103,8 @@ static duk_ret_t tjs_slider_prototype_getpercent(duk_context *ctx) {
 
 static duk_ret_t tjs_slider_prototype_setpercent(duk_context *ctx) {
     /* Get userdata */
-    TjsWidget *widget = (TjsWidget *)tjs_userdata_get(ctx);
+    TjsWidget *widget = (TjsWidget *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_SLIDER);
 
     if (NULL != widget) {
         widget->flags |= TJS_FLAG_UPDATE_VALUE;
@@ -126,7 +128,8 @@ static duk_ret_t tjs_slider_prototype_setpercent(duk_context *ctx) {
 
 static duk_ret_t tjs_slider_prototype_tostring(duk_context *ctx) {
     /* Get userdata */
-    TjsWidget *widget = (TjsWidget *)tjs_userdata_get(ctx);
+    TjsWidget *widget = (TjsWidget *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_SLIDER);
 
     if (NULL != widget) {
         TJS_LOG_DEBUG("flags=%d", widget->flags);

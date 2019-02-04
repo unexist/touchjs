@@ -37,9 +37,16 @@ var s1 = new TjsSlider(0)
         l1.setFgColor.apply(l1, rgb);
     });
 
-var c1 = new TjsCommand("ls -l src/").exec();
+var c1 = new TjsCommand("ls -l src/");
 
-tjs_print(c1.getOutput());
+tjs_print(c1.exec().getOutput());
+
+/* Attach */
+tjs_attach(l1);
+tjs_attach(b1);
+tjs_attach(b2);
+tjs_attach(b3);
+tjs_attach(s1);
 
 /* Dump */
 tjs_print(l1);

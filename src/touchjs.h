@@ -9,8 +9,8 @@
  * See the file COPYING for details.
  **/
 
-#ifndef TOUCHJS_H
-#define TOUCHJS_H 1
+#ifndef TJS_TOUCHJS_H
+#define TJS_TOUCHJS_H 1
 
 /* Includes */
 #include <stdio.h>
@@ -95,27 +95,26 @@ duk_context *_ctx;
 void tjs_log(int loglevel, const char *func, int line, const char *fmt, ...);
 void tjs_fatal(void *userdata, const char *msg);
 void tjs_dump_stack(const char *func, int line, duk_context *ctx);
-void tjs_exit();
+void tjs_exit(void);
+void tjs_attach(duk_context *ctx, TjsUserdata *userdata);
+void tjs_detach(duk_context *ctx, TjsUserdata *userdata);
 
-void tjs_touch_add(TjsUserdata *userdata);
-void tjs_touch_update(TjsUserdata *userdata);
-void tjs_touch_remove(TjsUserdata *userdata);
+/* Update.m */
+void tjs_update(TjsUserdata *userdata);
 
-/* global.m */
-duk_ret_t tjs_global_print(duk_context *ctx);
-duk_ret_t tjs_global_rgb(duk_context *ctx);
-duk_ret_t tjs_global_quit(duk_context *ctx);
-void tjs_global_init(duk_context *ctx);
-
-/* userdata.m */
-TjsUserdata *tjs_userdata_new(duk_context *ctx, int flags, size_t datasize);
-TjsUserdata *tjs_userdata_get(duk_context *ctx);
-void tjs_userdata_free(TjsUserdata *userdata);
-
-/* command.m */
+/* command.c */
 void tjs_command_init(duk_context *ctx);
 
-/* super.m */
+/* global.c */
+void tjs_global_init(duk_context *ctx);
+
+/* userdata.c */
+TjsUserdata *tjs_userdata_new(duk_context *ctx, int flags, size_t datasize);
+TjsUserdata *tjs_userdata_get(duk_context *ctx, int flag);
+TjsUserdata *tjs_userdata_from(duk_context *ctx, int flag);
+void tjs_userdata_free(TjsUserdata *userdata);
+
+/* super.c */
 void tjs_super_update(TjsUserdata *userdata);
 //void tjs_super_callback_add(duk_context *ctx, const char *sym);
 void tjs_super_callback_call(duk_context *ctx, const char *sym, int nargs);
@@ -125,13 +124,13 @@ duk_ret_t tjs_super_prototype_setbgcolor(duk_context *ctx);
 
 void tjs_super_init(duk_context *ctx, TjsUserdata *userdata);
 
-/* button.m */
-void tjs_button_init(duk_context *ctx);
-
-/* label.m */
+/* label.c */
 void tjs_label_init(duk_context *ctx);
+
+/* button.c */
+void tjs_button_init(duk_context *ctx);
 
 /* slider.m */
 void tjs_slider_init(duk_context *ctx);
 
-#endif /* TOUCHJS_H */
+#endif /* TJS_TOUCHJS_H */

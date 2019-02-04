@@ -12180,13 +12180,13 @@ DUK_LOCAL duk_uint32_t duk__uni_decode_value(duk_bitdecoder_ctx *bd_ctx) {
 	}
 }
 
-DUK_LOCAL duk_small_int_t duk__uni_range_match(const duk_uint8_t *unitab, duk_size_t unilen, duk_codepoint_t cp) {
+DUK_LOCAL duk_small_int_t duk__uni_range_match(const duk_uint8_t *unitab, duk_size_t uNULLen, duk_codepoint_t cp) {
 	duk_bitdecoder_ctx bd_ctx;
 	duk_codepoint_t prev_re;
 
 	duk_memzero(&bd_ctx, sizeof(bd_ctx));
 	bd_ctx.data = (const duk_uint8_t *) unitab;
-	bd_ctx.length = (duk_size_t) unilen;
+	bd_ctx.length = (duk_size_t) uNULLen;
 
 	prev_re = 0;
 	for (;;) {
@@ -20943,7 +20943,7 @@ DUK_EXTERNAL const char *duk_to_string(duk_hthread *thr, duk_idx_t idx) {
 		} else {
 			/* Represent a null pointer as 'null' to be consistent with
 			 * the JX format variant.  Native '%p' format for a NULL
-			 * pointer may be e.g. '(nil)'.
+			 * pointer may be e.g. '(NULL)'.
 			 */
 			duk_push_hstring_stridx(thr, DUK_STRIDX_LC_NULL);
 		}
