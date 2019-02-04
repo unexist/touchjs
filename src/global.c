@@ -17,7 +17,7 @@
  * @param[inout]  ctx  A #duk_context
  **/
 
-duk_ret_t tjs_global_print(duk_context *ctx) {
+static duk_ret_t tjs_global_print(duk_context *ctx) {
     /* Join strings on stack */
 	duk_push_string(ctx, " ");
 	duk_insert(ctx, 0);
@@ -34,7 +34,7 @@ duk_ret_t tjs_global_print(duk_context *ctx) {
  * @param[inout]  ctx  A #duk_context
  **/
 
-duk_ret_t tjs_global_rgb(duk_context *ctx) {
+static duk_ret_t tjs_global_rgb(duk_context *ctx) {
     /* Sanitize value */
     const char *hexcode = duk_require_string(ctx, -1);
     duk_pop(ctx);
@@ -66,12 +66,54 @@ duk_ret_t tjs_global_rgb(duk_context *ctx) {
 }
 
 /**
+ * Native attach method
+ *
+ * @param[inout]  ctx  A #duk_context
+ **/
+
+static duk_ret_t tjs_global_attach(duk_context *ctx) {
+    /* Sanity check */
+    duk_require_object(ctx, -1);
+    duk_dup_top(ctx); ///< Dup to prevent next call removing it from stack
+
+    /* Get userdata */
+    TjsUserdata *userdata = tjs_userdata_from(ctx, TJS_FLAGS_WIDGETS);
+
+    if (NULL != userdata) {
+        tjs_attach(ctx, userdata);
+    }
+
+    return 0;
+}
+
+/**
+ * Native detach method
+ *
+ * @param[inout]  ctx  A #duk_context
+ **/
+
+static duk_ret_t tjs_global_detach(duk_context *ctx) {
+    /* Sanity check */
+    duk_require_object(ctx, -1);
+    duk_dup_top(ctx); ///< Dup to prevent next call removing it from stack
+
+    /* Get userdata */
+    TjsUserdata *userdata = tjs_userdata_from(ctx, TJS_FLAGS_WIDGETS);
+
+    if (NULL != userdata) {
+        tjs_detach(ctx, userdata);
+    }
+
+    return 0;
+}
+
+/**
  * Native quit method
  *
  * @param[inout]  ctx  A #duk_context
  **/
 
-duk_ret_t tjs_global_quit(duk_context *ctx) {
+static duk_ret_t tjs_global_quit(duk_context *ctx) {
     TJS_LOG_INFO("Exiting");
 
     tjs_exit();
@@ -91,6 +133,12 @@ void tjs_global_init(duk_context *ctx) {
     duk_put_global_string(ctx, "tjs_print");
 
     duk_push_c_function(ctx, tjs_global_rgb, 1);
+    duk_put_global_string(ctx, "tjs_rgb");
+
+    duk_push_c_function(ctx, tjs_global_attach, 1);
+    duk_put_global_string(ctx, "tjs_attach");
+
+    duk_push_c_function(ctx, tjs_global_detach, 1);
     duk_put_global_string(ctx, "tjs_rgb");
 
     duk_push_c_function(ctx, tjs_global_quit, 0);

@@ -36,7 +36,6 @@ static duk_ret_t tjs_button_ctor(duk_context *ctx) {
     duk_pop(ctx);
 
     tjs_super_init(ctx, (TjsUserdata *)widget);
-    tjs_touch_add((TjsUserdata *)widget);
 
     TJS_LOG_DEBUG("flags=%d", widget->flags);
 
@@ -54,7 +53,8 @@ static duk_ret_t tjs_button_prototype_bind(duk_context *ctx) {
     duk_require_function(ctx, -1);
 
     /* Get userdata */
-    TjsWidget *widget = (TjsWidget *)tjs_userdata_get(ctx);
+    TjsWidget *widget = (TjsWidget *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_BUTTON);
 
     if (NULL != widget) {
         TJS_LOG_DEBUG("flags=%d", widget->flags);
@@ -80,7 +80,8 @@ static duk_ret_t tjs_button_prototype_bind(duk_context *ctx) {
 
 static duk_ret_t tjs_button_prototype_click(duk_context *ctx) {
     /* Get userdata */
-    TjsWidget *widget = (TjsWidget *)tjs_userdata_get(ctx);
+    TjsWidget *widget = (TjsWidget *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_BUTTON);
 
     if (NULL != widget) {
         TJS_LOG_DEBUG("flags=%d", widget->flags);
@@ -104,7 +105,8 @@ static duk_ret_t tjs_button_prototype_click(duk_context *ctx) {
 
 static duk_ret_t tjs_button_prototype_getvalue(duk_context *ctx) {
     /* Get userdata */
-    TjsWidget *widget = (TjsWidget *)tjs_userdata_get(ctx);
+    TjsWidget *widget = (TjsWidget *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_BUTTON);
 
     if (NULL != widget) {
         TJS_LOG_DEBUG("flags=%d, value=%s",
@@ -126,7 +128,8 @@ static duk_ret_t tjs_button_prototype_getvalue(duk_context *ctx) {
 
 static duk_ret_t tjs_button_prototype_tostring(duk_context *ctx) {
     /* Get userdata */
-    TjsWidget *widget = (TjsWidget *)tjs_userdata_get(ctx);
+    TjsWidget *widget = (TjsWidget *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_BUTTON);
 
     if (NULL != widget) {
         TJS_LOG_DEBUG("flags=%d", widget->flags);

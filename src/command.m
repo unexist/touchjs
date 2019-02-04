@@ -9,8 +9,6 @@
  * See the file COPYING for details.
  **/
 
-#include "touchjs.h"
-
 #import "touchjs.h"
 #import <Cocoa/Cocoa.h>
 
@@ -64,7 +62,8 @@ static duk_ret_t tjs_command_ctor(duk_context *ctx) {
 
 static duk_ret_t tjs_command_prototype_exec(duk_context *ctx) {
     /* Get userdata */
-    TjsCommand *command = (TjsCommand *)tjs_userdata_get(ctx);
+    TjsCommand *command = (TjsCommand *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_COMMAND);
 
     if (NULL != command) {
         TJS_LOG_DEBUG("flags=%d", command->flags);
@@ -74,9 +73,7 @@ static duk_ret_t tjs_command_prototype_exec(duk_context *ctx) {
 
         /* Split arguments */
         NSArray *args = [NSArray arrayWithObjects:
-            @"-c", @"-l", [NSString stringWithUTF8String: command->line], nil];
-
-        NSLog(@"%@", args);
+            @"-c", @"-l", [NSString stringWithUTF8String: command->line], NULL];
 
         /* Get user shell */
         NSDictionary *env = [[NSProcessInfo processInfo] environment];
@@ -106,7 +103,8 @@ static duk_ret_t tjs_command_prototype_exec(duk_context *ctx) {
 
 static duk_ret_t tjs_command_prototype_getoutput(duk_context *ctx) {
     /* Get userdata */
-    TjsCommand *command = (TjsCommand *)tjs_userdata_get(ctx);
+    TjsCommand *command = (TjsCommand *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_COMMAND);
 
     if (NULL != command) {
         TJS_LOG_DEBUG("flags=%d", command->flags);
@@ -137,7 +135,8 @@ static duk_ret_t tjs_command_prototype_getoutput(duk_context *ctx) {
 
 static duk_ret_t tjs_command_prototype_tostring(duk_context *ctx) {
     /* Get userdata */
-    TjsCommand *command = (TjsCommand *)tjs_userdata_get(ctx);
+    TjsCommand *command = (TjsCommand *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_COMMAND);
 
     if (NULL != command) {
         TJS_LOG_DEBUG("flags=%d", command->flags);
