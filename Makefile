@@ -14,6 +14,7 @@ SOURCES= \
 	src/controls/label.c \
 	src/controls/button.c \
 	src/controls/slider.c \
+	src/controls/scrubber.c \
 	src/duktape/duktape.c
 
 TEMP=$(SOURCES:.m=.o)
