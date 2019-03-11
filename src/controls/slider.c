@@ -12,7 +12,7 @@
 #include "../touchjs.h"
 
 /**
- * Native slider constructor
+ * Native constructor
  *
  * @param[inout]  ctx  A #duk_context
  **/
@@ -43,7 +43,7 @@ static duk_ret_t tjs_slider_ctor(duk_context *ctx) {
 }
 
 /**
- * Native slider bind prototype method
+ * Native bind prototype method
  *
  * @param[inout]  ctx  A #duk_context
  **/
@@ -73,7 +73,7 @@ static duk_ret_t tjs_slider_prototype_bind(duk_context *ctx) {
 }
 
 /**
- * Native slider getPercent prototype method
+ * Native getPercent prototype method
  *
  * @param[inout]  ctx  A #duk_context
  **/
@@ -96,7 +96,7 @@ static duk_ret_t tjs_slider_prototype_getpercent(duk_context *ctx) {
 }
 
 /**
- * Native slider setPercent prototype method
+ * Native setPercent prototype method
  *
  * @param[inout]  ctx  A #duk_context
  **/
@@ -121,7 +121,7 @@ static duk_ret_t tjs_slider_prototype_setpercent(duk_context *ctx) {
 }
 
 /**
- * Native slider getValue prototype method
+ * Native toString prototype method
  *
  * @param[inout]  ctx  A #duk_context
  **/

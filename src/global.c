@@ -77,7 +77,7 @@ static duk_ret_t tjs_global_attach(duk_context *ctx) {
     duk_dup_top(ctx); ///< Dup to prevent next call removing it from stack
 
     /* Get userdata */
-    TjsUserdata *userdata = tjs_userdata_from(ctx, TJS_FLAGS_WIDGETS);
+    TjsUserdata *userdata = tjs_userdata_from(ctx, TJS_FLAGS_ATTACHABLE);
 
     if (NULL != userdata) {
         tjs_attach(ctx, userdata);
@@ -98,7 +98,7 @@ static duk_ret_t tjs_global_detach(duk_context *ctx) {
     duk_dup_top(ctx); ///< Dup to prevent next call removing it from stack
 
     /* Get userdata */
-    TjsUserdata *userdata = tjs_userdata_from(ctx, TJS_FLAGS_WIDGETS);
+    TjsUserdata *userdata = tjs_userdata_from(ctx, TJS_FLAGS_ATTACHABLE);
 
     if (NULL != userdata) {
         tjs_detach(ctx, userdata);

@@ -24,7 +24,7 @@ typedef struct tjs_command_t {
 } TjsCommand;
 
 /**
- * Native label constructor
+ * Native constructor
  *
  * @param[inout]  ctx  A #duk_context
  **/
@@ -151,7 +151,7 @@ static duk_ret_t tjs_command_prototype_tostring(duk_context *ctx) {
 }
 
 /**
- * Init methods for #TjsLabel
+ * Init methods for #TjsCommand
  *
  * @param[inout]  ctx  A #duk_context
  **/
