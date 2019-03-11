@@ -25,6 +25,14 @@ var b3 = new TjsButton("Blue")
         idx = 2;
         s1.setPercent(rgb[idx] * 100 / 255).setBgColor(0, 0, 255);
         l1.setFgColor.apply(l1, rgb);
+   });
+
+var b4 = new TjsButton("Exec")
+    .setBgColor(255, 0, 255)
+    .bind(function () {
+        var c1 = new TjsCommand("ls -l src/");
+
+        tjs_print(c1.exec().getOutput());
     });
 
 var s1 = new TjsSlider(0)
@@ -37,15 +45,15 @@ var s1 = new TjsSlider(0)
         l1.setFgColor.apply(l1, rgb);
     });
 
-var c1 = new TjsCommand("ls -l src/");
-
-tjs_print(c1.exec().getOutput());
+var sc1 = new TjsScrubber()
+    .attach(b1)
+    .attach(b2)
+    .attach(b3)
+    .attach(b4);
 
 /* Attach */
 tjs_attach(l1);
-tjs_attach(b1);
-tjs_attach(b2);
-tjs_attach(b3);
+tjs_attach(sc1);
 tjs_attach(s1);
 
 /* Dump */
@@ -53,4 +61,6 @@ tjs_print(l1);
 tjs_print(b1);
 tjs_print(b2);
 tjs_print(b3);
+tjs_print(b4);
 tjs_print(s1);
+tjs_print(sc1);
