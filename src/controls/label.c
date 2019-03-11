@@ -12,7 +12,7 @@
 #include "../touchjs.h"
 
 /**
- * Native label constructor
+ * Native constructor
  *
  * @param[inout]  ctx  A #duk_context
  **/
@@ -43,7 +43,7 @@ static duk_ret_t tjs_label_ctor(duk_context *ctx) {
 }
 
 /**
- * Native label getValue prototype method
+ * Native getValue prototype method
  *
  * @param[inout]  ctx  A #duk_context
  **/
@@ -66,7 +66,7 @@ static duk_ret_t tjs_label_prototype_getvalue(duk_context *ctx) {
 }
 
 /**
- * Native label getValue prototype method
+ * Native toString prototype method
  *
  * @param[inout]  ctx  A #duk_context
  **/

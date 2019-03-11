@@ -12,7 +12,7 @@
 #include "../touchjs.h"
 
  /**
- * Native button constructor
+ * Native constructor
  *
  * @param[inout]  ctx  A #duk_context
  **/
@@ -43,7 +43,7 @@ static duk_ret_t tjs_button_ctor(duk_context *ctx) {
 }
 
 /**
- * Native button bind prototype method
+ * Native bind prototype method
  *
  * @param[inout]  ctx  A #duk_context
  **/
@@ -73,7 +73,7 @@ static duk_ret_t tjs_button_prototype_bind(duk_context *ctx) {
 }
 
 /**
-  * Native button click prototype method
+  * Native click prototype method
   *
   * @param[inout]  ctx  A #duk_context
   **/
@@ -98,7 +98,7 @@ static duk_ret_t tjs_button_prototype_click(duk_context *ctx) {
 }
 
 /**
- * Native button getValue prototype method
+ * Native getValue prototype method
  *
  * @param[inout]  ctx  A #duk_context
  **/
@@ -121,7 +121,7 @@ static duk_ret_t tjs_button_prototype_getvalue(duk_context *ctx) {
 }
 
 /**
- * Native button getValue prototype method
+ * Native toString prototype method
  *
  * @param[inout]  ctx  A #duk_context
  **/
@@ -144,7 +144,7 @@ static duk_ret_t tjs_button_prototype_tostring(duk_context *ctx) {
 }
 
 /**
- * Init methods for #Tjsbutton
+ * Init methods for #TjsButton
  *
  * @param[inout]  ctx  A #duk_context
  **/
