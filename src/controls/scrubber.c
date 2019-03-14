@@ -32,11 +32,9 @@ static duk_ret_t tjs_scrubber_ctor(duk_context *ctx) {
     }
 
     /* Get arguments */
-    scrubber->nuserdata = 0;
     tjs_super_init(ctx, (TjsUserdata *)scrubber);
 
-    TJS_LOG_DEBUG("flags=%d, nuserdata=%d",
-        scrubber->flags, scrubber->nuserdata);
+    TJS_LOG_OBJ(scrubber);
 
     return 0;
 }
@@ -57,16 +55,11 @@ static duk_ret_t tjs_scrubber_prototype_attach(duk_context *ctx) {
     TjsScrubber *scrubber = (TjsScrubber *)tjs_userdata_get(ctx,
         TJS_FLAG_TYPE_SCRUBBER);
 
-    if (NULL != userdata && NULL != scrubber) {
-        scrubber->userdata = (TjsUserdata **)realloc(scrubber->userdata,
-            (scrubber->nuserdata + 1) * sizeof(TjsUserdata *));
+    if (NULL != scrubber) {
+        TJS_LOG_OBJ(scrubber);
 
-        scrubber->userdata[scrubber->nuserdata] = userdata;
-        scrubber->nuserdata++;
+        tjs_attach(ctx, userdata, (TjsUserdata *)scrubber);
     }
-
-    TJS_LOG_DEBUG("flags=%d, nuserdata=%d",
-        scrubber->flags, scrubber->nuserdata);
 
     /* Allow fluid.. */
     duk_push_this(ctx);
@@ -90,25 +83,11 @@ static duk_ret_t tjs_scrubber_prototype_detach(duk_context *ctx) {
     TjsScrubber *scrubber = (TjsScrubber *)tjs_userdata_get(ctx,
         TJS_FLAG_TYPE_SCRUBBER);
 
-    if (NULL != userdata && NULL != scrubber) {
-        /* Update order */
-        for (int i = 0; i < scrubber->nuserdata; i++) {
-            if (scrubber->userdata[i] == userdata) {
-                for (int j = i; j < (scrubber->nuserdata - 1); j++) {
-                    scrubber->userdata[j] = scrubber->userdata[j + 1];
-                }
+    if (NULL != scrubber) {
+        TJS_LOG_OBJ(scrubber);
 
-                break;
-            }
-        }
-
-        /* Update array */
-        scrubber->userdata = (TjsUserdata **)realloc(scrubber->userdata,
-            --(scrubber->nuserdata) * sizeof(TjsUserdata *));
+        tjs_detach(ctx, userdata);
     }
-
-    TJS_LOG_DEBUG("flags=%d, nuserdata=%d",
-        scrubber->flags, scrubber->nuserdata);
 
     /* Allow fluid.. */
     duk_push_this(ctx);
@@ -128,11 +107,9 @@ static duk_ret_t tjs_scrubber_prototype_tostring(duk_context *ctx) {
         TJS_FLAG_TYPE_SCRUBBER);
 
     if (NULL != scrubber) {
-        TJS_LOG_DEBUG("flags=%d, nuserdata=%d",
-            scrubber->flags, scrubber->nuserdata);
+        TJS_LOG_DEBUG("flags=%d", scrubber->flags);
 
-        duk_push_sprintf(ctx, "flags=%d, nuserdata=%d",
-            scrubber->flags, scrubber->nuserdata);
+        duk_push_sprintf(ctx, "flags=%d", scrubber->flags);
 
         return 1;
     }

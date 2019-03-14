@@ -20,7 +20,8 @@ static const NSTouchBarItemIdentifier kQuit = @"org.subforge.quit";
 typedef struct tjs_embed_t {
     int flags;
 
-    TjsUserdata *userdata;
+    struct tjs_userdata_t *userdata;
+    struct tjs_userdata_t *parent;
 
     /* Obj-c */
     NSTouchBarItemIdentifier identifier;
@@ -35,6 +36,11 @@ typedef struct tjs_touch_t {
     NSMutableArray *embedded;
 } TjsTouch;
 
+typedef union tjs_packed_t {
+    unsigned char data[2];
+    unsigned int packed;
+} TjsPack;
+
 /* Globals */
 TjsTouch touch;
 
@@ -43,6 +49,10 @@ extern void DFRElementSetControlStripPresenceForIdentifier(NSString *, BOOL);
 extern void DFRSystemModalShowsCloseBoxWhenFrontMost(BOOL);
 
 static TjsEmbed *tjs_find(TjsUserdata *userdata, int *idx);
+static void tjs_embed_configure(TjsEmbed *embed);
+static void tjs_embed_update(TjsEmbed *embed);
+static void tjs_embed_color(TjsEmbed *embed);
+static void tjs_embed_value(TjsEmbed *embed);
 
 /* Interfaces */
 @interface NSTouchBarItem ()
@@ -92,7 +102,10 @@ static TjsEmbed *tjs_find(TjsUserdata *userdata, int *idx);
     for (int i = 0; i < [touch.embedded count]; i++) {
         TjsEmbed *embed = [[touch.embedded objectAtIndex: i] pointerValue];
 
-        [array addObject: embed->identifier];
+        /* Exclude items with a parent */
+        if (NULL == embed->parent) {
+            [array addObject: embed->identifier];
+        }
     }
 
     [array addObject: kQuit];
@@ -125,17 +138,17 @@ static TjsEmbed *tjs_find(TjsUserdata *userdata, int *idx);
     TjsEmbed *embed = [[touch.embedded objectAtIndex: idx] pointerValue];
 
     if (NULL != embed && NULL != embed->userdata) {
-        TjsWidget *widget = (TjsWidget *)embed->userdata;
+        NSString *identifier;
 
-        TJS_LOG_DEBUG("flags=%d, idx=%d", widget->flags, idx);
+        TJS_LOG_DEBUG("flags=%d, idx=%d", embed->userdata->flags, idx);
 
-        /* Get object and call callback */
+        /* Get object and call callback if any */
         duk_get_global_string(_ctx, [embed->identifier UTF8String]);
-
-        TJS_DSTACK(_ctx);
 
         if (duk_is_object(_ctx, -1)) {
             tjs_super_callback_call(_ctx, TJS_SYM_CLICK_CB, 0);
+        } else {
+            duk_pop(_ctx);
         }
     }
 }
@@ -164,7 +177,8 @@ static TjsEmbed *tjs_find(TjsUserdata *userdata, int *idx);
             widget->value.asInt = value;
         }
 
-        TJS_LOG_DEBUG("flags=%d, idx=%d, value=%lu", widget->flags, idx, value);
+        TJS_LOG_DEBUG("obj=%p, flags=%d, idx=%d, value=%lu",
+            widget, widget->flags, idx, value);
 
         /* Get object and call callback */
         duk_get_global_string(_ctx, [embed->identifier UTF8String]);
@@ -172,6 +186,8 @@ static TjsEmbed *tjs_find(TjsUserdata *userdata, int *idx);
         if (duk_is_object(_ctx, -1)) {
             duk_push_int(_ctx, value);
             tjs_super_callback_call(_ctx, TJS_SYM_SLIDE_CB, 1);
+        } else {
+            duk_pop(_ctx);
         }
     }
 }
@@ -203,8 +219,6 @@ static TjsEmbed *tjs_find(TjsUserdata *userdata, int *idx);
 {
     NSCustomTouchBarItem *item = NULL;
 
-    NSLog(@"id=%@", identifier);
-
     /* Check identifiers */
     if ([identifier isEqualToString: kQuit]) {
         item = [[NSCustomTouchBarItem alloc] initWithIdentifier: kQuit];
@@ -221,13 +235,10 @@ static TjsEmbed *tjs_find(TjsUserdata *userdata, int *idx);
                 item = [[NSCustomTouchBarItem alloc]
                     initWithIdentifier: embed->identifier];
 
-                tjs_update(embed->userdata);
+                tjs_embed_configure(embed);
+                tjs_embed_update(embed);
 
                 item.view = embed->view;
-
-                if (0 < (embed->userdata->flags & TJS_FLAGS_WIDGETS)) {
-                    [item.view setTag: i];
-                }
             }
         }
     }
@@ -357,44 +368,75 @@ void tjs_exit() {
  *          Update            *
  ******************************/
 
- static NSView *tjs_update_create(TjsWidget *widget) {
-    NSView *view = NULL;
-
-    /* Get delegate as target */
-    AppDelegate *delegate = (AppDelegate *)[[NSApplication sharedApplication] delegate];
-
-    /* Create type */
-    if (0 < (widget->flags & TJS_FLAG_TYPE_LABEL)) { ///< TjsLabel
-        view = [NSTextField labelWithString:
-            [NSString stringWithUTF8String: widget->value.asChar]];
-    } else if (0 < (widget->flags & TJS_FLAG_TYPE_BUTTON)) { ///< TjsButton
-        view = [NSButton buttonWithTitle:
-            [NSString stringWithUTF8String: widget->value.asChar]
-            target: delegate action: @selector(button:)];
-    } else if (0 < (widget->flags & TJS_FLAG_TYPE_SLIDER)) { ///< TjsSlider
-        view = [NSSlider sliderWithValue: widget->value.asInt
-            minValue: 0 maxValue: 100 target: delegate action: @selector(slider:)];
-    }
-
-    return view;
- }
-
 /**
- * Update view of touch item
+ * Create view of embed item
  *
- * @param[inout]  touch  A #TjsEmbed
+ * @param[inout]  embed  A #TjsEmbed
+ * @param[in] .   idx    Element index
  **/
 
-static void tjs_update_view(TjsEmbed *embed) {
+static void tjs_embed_create(TjsEmbed *embed, int idx) {
     /* Sanity check */
-    if (0 < (embed->flags & TJS_FLAG_TYPE_EMBED)) {
-        /* Create type */
-        if (0 < (embed->userdata->flags & TJS_FLAGS_WIDGETS)) {
-            embed->view = tjs_update_create((TjsWidget *)(embed->userdata));
+    if (0 < (embed->flags & TJS_FLAG_TYPE_EMBED) &&
+        0 == (embed->flags & TJS_FLAG_STATE_CREATED) && NULL != embed->userdata)
+    {
+        /* Get delegate as target */
+        AppDelegate *delegate = (AppDelegate *)[[NSApplication sharedApplication] delegate];
+
+        /* Handle type */
+        if (0 < (embed->userdata->flags & TJS_FLAG_TYPE_LABEL)) { ///< TjsLabel
+            embed->view = [NSTextField labelWithString:
+                [NSString stringWithUTF8String: ((TjsWidget *)embed->userdata)->value.asChar]];
+
+            [((NSTextField *)embed->view) setTag: idx];
+        } else if (0 < (embed->userdata->flags & TJS_FLAG_TYPE_BUTTON)) { ///< TjsButton
+            embed->view = [NSButton buttonWithTitle:
+                [NSString stringWithUTF8String: ((TjsWidget *)embed->userdata)->value.asChar]
+                target: delegate action: @selector(button:)];
+
+            [((NSButton *)embed->view) setTag: idx];
+        } else if (0 < (embed->userdata->flags & TJS_FLAG_TYPE_SLIDER)) { ///< TjsSlider
+            embed->view = [NSSlider sliderWithValue: ((TjsWidget *)embed->userdata)->value.asInt
+                minValue: 0 maxValue: 100 target: delegate action: @selector(slider:)];
+
+            [((NSSlider *)embed->view) setTag: idx];
         } else if (0 < (embed->userdata->flags & TJS_FLAG_TYPE_SCRUBBER)) {
+            embed->view = [[NSScrollView alloc] initWithFrame: CGRectMake(0, 0, 400, 30)];
+        }
+
+        /* Mark as ready and update it */
+        embed->flags |= TJS_FLAG_STATE_CREATED;
+    }
+}
+
+/**
+ * Update embed item
+ *
+ * @param[inout]  embed  A #TjsEmbed
+ **/
+
+static void tjs_embed_update(TjsEmbed *embed) {
+    if (0 < (embed->flags & TJS_FLAG_TYPE_EMBED)) {
+        tjs_embed_color(embed);
+        tjs_embed_value(embed);
+    }
+}
+
+/**
+ * Configure view of embed item
+ *
+ * @param[inout]  embed  A #TjsEmbed
+ **/
+
+ static void tjs_embed_configure(TjsEmbed *embed) {
+    /* Sanity check */
+    if (0 < (embed->flags & TJS_FLAG_TYPE_EMBED) &&
+        0 == (embed->flags & TJS_FLAG_STATE_CONFIGURED) && NULL != embed->userdata)
+    {
+        /* Handle type */
+        if (0 < (embed->userdata->flags & TJS_FLAG_TYPE_SCRUBBER)) {
             TjsScrubber *scrubber = (TjsScrubber *)(embed->userdata);
 
-            NSScrollView *scrollView = [[NSScrollView alloc] initWithFrame: CGRectMake(0, 0, 400, 30)];
             NSMutableDictionary *constraintViews = [NSMutableDictionary dictionary];
             NSView *docView = [[NSView alloc] initWithFrame: NSZeroRect];
             NSSize size = NSMakeSize(8, 30);
@@ -402,27 +444,28 @@ static void tjs_update_view(TjsEmbed *embed) {
             /* Build format and collect children */
             NSString *layoutFormat = @"H:|-8-";
 
-            for (int i = 0; i < scrubber->nuserdata; i++) {
-                /* Create widget view */
-                NSView *widgetView = tjs_update_create((TjsWidget *)(scrubber->userdata[i]));
+            for (int i = 0; i < [touch.embedded count]; i++) {
+                TjsEmbed *childEmbed = [[touch.embedded objectAtIndex: i] pointerValue];
 
-                [widgetView setTranslatesAutoresizingMaskIntoConstraints: NO];
-                [docView addSubview: widgetView];
+                if (NULL != childEmbed && childEmbed->parent == embed->userdata) {
+                    [childEmbed->view setTranslatesAutoresizingMaskIntoConstraints: NO];
+                    [docView addSubview: childEmbed->view];
 
-                /* Append constraint */
-                NSString *name = [NSString stringWithFormat: @"widget%d", i];
+                    /* Append constraint */
+                    NSString *identifier = [NSString stringWithFormat: @"widget%d", i];
 
-                layoutFormat = [layoutFormat stringByAppendingString:
-                    [NSString stringWithFormat:@"[%@]-8-", name]];
+                    layoutFormat = [layoutFormat stringByAppendingString:
+                        [NSString stringWithFormat: @"[%@]-8-", identifier]];
 
-                [constraintViews setObject: widgetView forKey: name];
+                    [constraintViews setObject: childEmbed->view forKey: identifier];
 
-                size.width += 8 + widgetView.intrinsicContentSize.width + 8;
+                    size.width += 8 + childEmbed->view.intrinsicContentSize.width + 8;
+
+                    tjs_embed_update(childEmbed);
+                }
             }
 
             layoutFormat = [layoutFormat stringByAppendingString: [NSString stringWithFormat:@"|"]];
-
-            NSLog(@"%@ - %@ - %f/%f", constraintViews, layoutFormat, size.width, size.height);
 
             /* Add layout constraint */
             NSArray *constraints = [NSLayoutConstraint constraintsWithVisualFormat: layoutFormat
@@ -431,30 +474,30 @@ static void tjs_update_view(TjsEmbed *embed) {
             [docView setFrame: NSMakeRect(0, 0, size.width, size.height)];
             [docView addConstraints: constraints];
 
-            scrollView.documentView = docView;
-
-            embed->view = scrollView;
+            ((NSScrollView *)embed->view).documentView = docView;
         }
 
-        /* Mark as ready and update it */
-        embed->flags |= TJS_FLAG_READY;
+        /* Mark as configured */
+        embed->flags |= TJS_FLAG_STATE_CONFIGURED;
     }
-}
+ }
 
 /**
  * Update color of touch item
  *
- * @param[inout]  touch  A #TjsEmbed
+ * @param[inout]  embed  A #TjsEmbed
  **/
 
-static void tjs_update_color(TjsEmbed *embed) {
-    /* Sanity check */
-    if (0 < (embed->flags & TJS_FLAG_TYPE_EMBED)) {
+static void tjs_embed_color(TjsEmbed *embed) {
+    /* Sanity checks */
+    if (0 < (embed->flags & TJS_FLAG_TYPE_EMBED) && NULL != embed->userdata &&
+        0 < (embed->userdata->flags & TJS_FLAGS_COLORS))
+    {
         TjsWidget *widget = (TjsWidget *)(embed->userdata);
         TjsColor *col = NULL;
 
         /* Selct fg or bg */
-        if (0 < (widget->flags & TJS_FLAG_UPDATE_COLOR_FG)) {
+        if (0 < (widget->flags & TJS_FLAG_STATE_COLOR_FG)) {
             col = &(widget->colors.fg);
         } else {
             col = &(widget->colors.bg);
@@ -468,7 +511,7 @@ static void tjs_update_color(TjsEmbed *embed) {
             alpha: 1.0f];
 
         /* Handle widget types */
-        if (0 < (widget->flags & TJS_FLAG_UPDATE_COLOR_FG)) {
+        if (0 < (widget->flags & TJS_FLAG_STATE_COLOR_FG)) {
             if (0 < (widget->flags & TJS_FLAG_TYPE_LABEL)) {
                 [((NSTextView *)(embed->view)) setTextColor: parsedCol];
             }
@@ -482,21 +525,23 @@ static void tjs_update_color(TjsEmbed *embed) {
         }
 
         /* Remove flags if ready */
-        if (0 < (embed->flags & TJS_FLAG_READY)) {
+        if (0 < (embed->flags & TJS_FLAG_STATE_CREATED)) {
             widget->flags &= ~TJS_FLAGS_COLORS;
         }
     }
 }
 
 /**
- * Update value of touch item
+ * Update value of embed item
  *
- * @param[inout]  touch  A #TjsEmbed
+ * @param[inout]  embed  A #TjsEmbed
  **/
 
-static void tjs_update_value(TjsEmbed *embed) {
+static void tjs_embed_value(TjsEmbed *embed) {
     /* Sanity check */
-    if (0 < (embed->flags & TJS_FLAG_TYPE_EMBED)) {
+    if (0 < (embed->flags & TJS_FLAG_TYPE_EMBED) && NULL != embed->userdata &&
+        0 < (embed->userdata->flags & TJS_FLAG_STATE_VALUE))
+    {
         TjsWidget *widget = (TjsWidget *)(embed->userdata);
 
         /* Handle widget types */
@@ -508,8 +553,8 @@ static void tjs_update_value(TjsEmbed *embed) {
         }
 
         /* Remove flags if ready */
-        if (0 < (embed->flags & TJS_FLAG_READY)) {
-            widget->flags &= ~TJS_FLAG_UPDATE_VALUE;
+        if (0 < (embed->flags & TJS_FLAG_STATE_CREATED)) {
+            widget->flags &= ~TJS_FLAG_STATE_VALUE;
         }
     }
 }
@@ -522,27 +567,19 @@ static void tjs_update_value(TjsEmbed *embed) {
 
 void tjs_update(TjsUserdata *userdata) {
     if (NULL != userdata && 0 < (userdata->flags & TJS_FLAGS_ATTACHABLE)) {
-        TJS_LOG_DEBUG("flags=%d", userdata->flags);
+        TJS_LOG_OBJ(userdata);
 
         /* Find embed item */
         TjsEmbed *embed = tjs_find(userdata, NULL);
 
         if (NULL != embed) {
-            if (0 == (embed->flags & TJS_FLAG_READY)) {
-                tjs_update_view(embed);
-            }
-            if (0 < (userdata->flags & TJS_FLAGS_COLORS)) {
-                tjs_update_color(embed);
-            }
-            if (0 < (userdata->flags & TJS_FLAG_UPDATE_VALUE)) {
-                tjs_update_value(embed);
-            }
+            tjs_embed_update(embed);
         }
     }
 }
 
 /******************************
- *           Touch            *
+ *           Embed            *
  ******************************/
 
 /**
@@ -581,19 +618,23 @@ static TjsEmbed *tjs_find(TjsUserdata *userdata, int *idx) {
  *
  * @param[inout]  ctx       A #duk_context
  * @param[inout]  userdata  A #TjsUserdata
+ * @param[inout]  parent    A #TjsUserdata
  **/
 
-void tjs_attach(duk_context *ctx, TjsUserdata *userdata) {
+void tjs_attach(duk_context *ctx, TjsUserdata *userdata, TjsUserdata *parent) {
     if (NULL != userdata) {
-        TJS_LOG_DEBUG("flags=%d", userdata->flags);
+        TJS_LOG_OBJ(userdata);
 
-        /* Create new touch */
+        /* Create new embed */
         TjsEmbed *embed = (TjsEmbed *)calloc(1, sizeof(TjsEmbed));
 
         embed->flags = TJS_FLAG_TYPE_EMBED;
         embed->userdata = userdata;
+        embed->parent = parent;
         embed->identifier = [NSString stringWithFormat:
             @"org.subforge.embed%lu", [touch.embedded count]];
+
+        tjs_embed_create(embed, [touch.embedded count]);
 
         /* Store in array */
         [touch.embedded addObject: [NSValue value: &embed
@@ -615,7 +656,7 @@ void tjs_detach(duk_context *ctx, TjsUserdata *userdata) {
     if (NULL != userdata) {
         int idx = 0;
 
-        TJS_LOG_DEBUG("flags=%d", userdata->flags);
+        TJS_LOG_OBJ(userdata);
 
         /* Find embed item */
         TjsEmbed *embed = tjs_find(userdata, &idx);
@@ -626,7 +667,6 @@ void tjs_detach(duk_context *ctx, TjsUserdata *userdata) {
             duk_put_global_string(_ctx, [embed->identifier UTF8String]);
 
             free(embed);
-
         }
     }
 }

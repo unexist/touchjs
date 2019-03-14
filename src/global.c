@@ -80,7 +80,7 @@ static duk_ret_t tjs_global_attach(duk_context *ctx) {
     TjsUserdata *userdata = tjs_userdata_from(ctx, TJS_FLAGS_ATTACHABLE);
 
     if (NULL != userdata) {
-        tjs_attach(ctx, userdata);
+        tjs_attach(ctx, userdata, NULL);
     }
 
     return 0;

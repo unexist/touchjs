@@ -37,7 +37,7 @@ static duk_ret_t tjs_label_ctor(duk_context *ctx) {
 
     tjs_super_init(ctx, (TjsUserdata *)widget);
 
-    TJS_LOG_DEBUG("flags=%d", widget->flags);
+    TJS_LOG_OBJ(widget);
 
     return 0;
 }
@@ -54,8 +54,8 @@ static duk_ret_t tjs_label_prototype_getvalue(duk_context *ctx) {
         TJS_FLAG_TYPE_LABEL);
 
     if (NULL != widget) {
-        TJS_LOG_DEBUG("flags=%d, value=%s",
-            widget->flags, widget->value.asChar);
+        TJS_LOG_DEBUG("obj=%p, flags=%d, value=%s",
+            widget, widget->flags, widget->value.asChar);
 
         duk_push_string(ctx, widget->value.asChar);
 
@@ -77,7 +77,7 @@ static duk_ret_t tjs_label_prototype_tostring(duk_context *ctx) {
         TJS_FLAG_TYPE_LABEL);
 
     if (NULL != widget) {
-        TJS_LOG_DEBUG("flags=%d", widget->flags);
+        TJS_LOG_OBJ(widget);
 
         duk_push_sprintf(ctx, "flags=%d, value=%s",
             widget->flags, widget->value.asChar);
