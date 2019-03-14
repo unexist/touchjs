@@ -23,12 +23,11 @@
 
 /* Flags */
 #define TJS_FLAG_TYPE_EMBED (1L << 0)
-#define TJS_FLAG_TYPE_EMBED_IGNORE  (1L << 2)
-#define TJS_FLAG_TYPE_COMMAND (1L << 3)
-#define TJS_FLAG_TYPE_LABEL  (1L << 4)
-#define TJS_FLAG_TYPE_BUTTON (1L << 5)
-#define TJS_FLAG_TYPE_SLIDER  (1L << 6)
-#define TJS_FLAG_TYPE_SCRUBBER  (1L << 7)
+#define TJS_FLAG_TYPE_COMMAND (1L << 1)
+#define TJS_FLAG_TYPE_LABEL  (1L << 2)
+#define TJS_FLAG_TYPE_BUTTON (1L << 3)
+#define TJS_FLAG_TYPE_SLIDER  (1L << 4)
+#define TJS_FLAG_TYPE_SCRUBBER  (1L << 5)
 
 #define TJS_FLAG_STATE_COLOR_FG (1L << 26)
 #define TJS_FLAG_STATE_COLOR_BG (1L << 27)
@@ -106,7 +105,7 @@ void tjs_log(int loglevel, const char *func, int line, const char *fmt, ...);
 void tjs_fatal(void *userdata, const char *msg);
 void tjs_dump_stack(const char *func, int line, duk_context *ctx);
 void tjs_exit(void);
-void tjs_attach(duk_context *ctx, TjsUserdata *userdata, TjsUserdata *parentUserdata);
+void tjs_attach(duk_context *ctx, TjsUserdata *userdata, TjsUserdata *parent);
 void tjs_detach(duk_context *ctx, TjsUserdata *userdata);
 
 /* Update.m */
