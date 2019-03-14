@@ -27,6 +27,8 @@ void tjs_super_callback_call(duk_context *ctx, const char *sym, int nargs) {
         duk_swap_top(ctx, -(2 + nargs)); ///< Move based on number of arguments
         duk_pcall_method(ctx, nargs);
         duk_pop(ctx); ///< Ignore result
+    } else {
+        duk_pop(ctx);
     }
 }
 
@@ -51,14 +53,14 @@ static duk_ret_t tjs_super_setcolor(duk_context *ctx, int flag) {
     if (NULL != userdata) {
         TjsWidget *widget = (TjsWidget *)userdata;
 
-        TJS_LOG_DEBUG("flags=%d, red=%d, green=%d, blue=%d",
-           widget->flags, red, green, blue);
+        TJS_LOG_DEBUG("obj=%p, flags=%d, red=%d, green=%d, blue=%d",
+           widget, widget->flags, red, green, blue);
 
         /* Store color in case control isn't visible */
         TjsColor *color = NULL;
         widget->flags |= flag;
 
-        if (TJS_FLAG_UPDATE_COLOR_FG == flag) {
+        if (TJS_FLAG_STATE_COLOR_FG == flag) {
             color = &(widget->colors.fg);
         } else {
             color = &(widget->colors.bg);
@@ -89,7 +91,7 @@ duk_ret_t tjs_super_prototype_tostring(duk_context *ctx) {
         TJS_FLAGS_WIDGETS);
 
     if (NULL != userdata) {
-        TJS_LOG_DEBUG("flags=%d", userdata->flags);
+        TJS_LOG_OBJ(userdata);
 
         duk_push_sprintf(ctx, "%d", userdata->flags);
 
@@ -106,7 +108,7 @@ duk_ret_t tjs_super_prototype_tostring(duk_context *ctx) {
   **/
 
 duk_ret_t tjs_super_prototype_setfgcolor(duk_context *ctx) {
-    return tjs_super_setcolor(ctx, TJS_FLAG_UPDATE_COLOR_FG);
+    return tjs_super_setcolor(ctx, TJS_FLAG_STATE_COLOR_FG);
 }
 
  /**
@@ -116,7 +118,7 @@ duk_ret_t tjs_super_prototype_setfgcolor(duk_context *ctx) {
   **/
 
 duk_ret_t tjs_super_prototype_setbgcolor(duk_context *ctx) {
-    return tjs_super_setcolor(ctx, TJS_FLAG_UPDATE_COLOR_BG);
+    return tjs_super_setcolor(ctx, TJS_FLAG_STATE_COLOR_BG);
 }
 
 /**
@@ -131,7 +133,7 @@ static duk_ret_t tjs_super_dtor(duk_context *ctx) {
         TJS_FLAGS_WIDGETS);
 
     if (NULL != userdata) {
-        TJS_LOG_DEBUG("flags=%d", userdata->flags);
+        TJS_LOG_OBJ(userdata);
     }
 
     return 0;
@@ -152,6 +154,6 @@ void tjs_super_init(duk_context *ctx, TjsUserdata *userdata) {
     duk_pop(ctx);
 
     if (NULL != userdata) {
-        TJS_LOG_DEBUG("flags=%d", userdata->flags);
+        TJS_LOG_OBJ(userdata);
     }
 }
