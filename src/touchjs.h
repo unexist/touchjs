@@ -23,20 +23,18 @@
 
 /* Flags */
 #define TJS_FLAG_TYPE_EMBED (1L << 0)
-#define TJS_FLAG_TYPE_COMMAND (1L << 1)
-#define TJS_FLAG_TYPE_LABEL  (1L << 2)
-#define TJS_FLAG_TYPE_BUTTON (1L << 3)
-#define TJS_FLAG_TYPE_SLIDER  (1L << 4)
-#define TJS_FLAG_TYPE_SCRUBBER  (1L << 5)
+#define TJS_FLAG_TYPE_EMBED_IGNORE  (1L << 2)
+#define TJS_FLAG_TYPE_COMMAND (1L << 3)
+#define TJS_FLAG_TYPE_LABEL  (1L << 4)
+#define TJS_FLAG_TYPE_BUTTON (1L << 5)
+#define TJS_FLAG_TYPE_SLIDER  (1L << 6)
+#define TJS_FLAG_TYPE_SCRUBBER  (1L << 7)
 
-#define TJS_FLAG_UPDATE_COLOR_FG (1L << 10)
-#define TJS_FLAG_UPDATE_COLOR_BG (1L << 11)
-#define TJS_FLAG_UPDATE_VALUE (1L << 12)
-
-#define TJS_FLAG_STANDALONE (1L << 20)
-
-#define TJS_FLAG_QUIT (1L << 29)
-#define TJS_FLAG_READY (1L << 30)
+#define TJS_FLAG_STATE_COLOR_FG (1L << 26)
+#define TJS_FLAG_STATE_COLOR_BG (1L << 27)
+#define TJS_FLAG_STATE_VALUE (1L << 28)
+#define TJS_FLAG_STATE_CONFIGURED (1L << 29)
+#define TJS_FLAG_STATE_CREATED (1L << 30)
 
 /* Combined */
 #define TJS_FLAGS_WIDGETS \
@@ -44,9 +42,9 @@
 #define TJS_FLAGS_ATTACHABLE \
     (TJS_FLAGS_WIDGETS|TJS_FLAG_TYPE_SCRUBBER)
 #define TJS_FLAGS_COLORS \
-    (TJS_FLAG_UPDATE_COLOR_FG|TJS_FLAG_UPDATE_COLOR_BG)
+    (TJS_FLAG_STATE_COLOR_FG|TJS_FLAG_STATE_COLOR_BG)
 #define TJS_FLAGS_UPDATES \
-    (TJS_FLAG_COLORS|TJS_FLAG_UPDATE_VALUE)
+    (TJS_FLAG_COLORS|TJS_FLAG_STATE_VALUE)
 
 /* Loglevel */
 #define TJS_LOGLEVEL_INFO (1L << 0)
@@ -65,6 +63,8 @@
     tjs_log(TJS_LOGLEVEL_ERROR, __FUNCTION__, __LINE__, FMT, ##__VA_ARGS__);
 #define TJS_LOG_DUK(FMT, ...) \
     tjs_log(TJS_LOGLEVEL_DUK, __FUNCTION__, __LINE__, FMT, ##__VA_ARGS__);
+#define TJS_LOG_OBJ(OBJ) \
+    tjs_log(TJS_LOGLEVEL_DEBUG, __FUNCTION__, __LINE__, "obj=%p, flags=%d", OBJ, OBJ->flags);
 
 /* Types */
 typedef struct tjs_color_t {
@@ -83,15 +83,11 @@ typedef struct tjs_userdata_t {
     int flags;
 } TjsUserdata;
 
-typedef struct tjs_scrubber_t
-{
+typedef struct tjs_scrubber_t {
     int flags;
-    int nuserdata;
-    TjsUserdata **userdata;
 } TjsScrubber;
 
-typedef struct tjs_widget_t
-{
+typedef struct tjs_widget_t {
     int flags;
 
     struct{
@@ -110,7 +106,7 @@ void tjs_log(int loglevel, const char *func, int line, const char *fmt, ...);
 void tjs_fatal(void *userdata, const char *msg);
 void tjs_dump_stack(const char *func, int line, duk_context *ctx);
 void tjs_exit(void);
-void tjs_attach(duk_context *ctx, TjsUserdata *userdata);
+void tjs_attach(duk_context *ctx, TjsUserdata *userdata, TjsUserdata *parentUserdata);
 void tjs_detach(duk_context *ctx, TjsUserdata *userdata);
 
 /* Update.m */
