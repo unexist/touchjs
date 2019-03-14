@@ -107,7 +107,7 @@ static duk_ret_t tjs_slider_prototype_setpercent(duk_context *ctx) {
         TJS_FLAG_TYPE_SLIDER);
 
     if (NULL != widget) {
-        widget->flags |= TJS_FLAG_UPDATE_VALUE;
+        widget->flags |= TJS_FLAG_STATE_VALUE;
         widget->value.asInt = duk_require_int(ctx, -1);
 
         TJS_LOG_DEBUG("flags=%d, percent=%d",
