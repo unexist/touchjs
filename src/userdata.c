@@ -33,7 +33,7 @@
     duk_put_prop_string(ctx, -2, TJS_SYM_USERDATA);
     duk_pop(ctx);
 
-    TJS_LOG_DEBUG("flags=%d", userdata->flags);
+    TJS_LOG_OBJ(userdata);
 
     return userdata;
  }
@@ -70,7 +70,7 @@ TjsUserdata *tjs_userdata_from(duk_context *ctx, int flag) {
     TjsUserdata *userdata = (TjsUserdata *)duk_get_pointer(ctx, -1);
     duk_pop_2(ctx);
 
-    TJS_LOG_DEBUG("flags=%d", userdata->flags);
+    TJS_LOG_OBJ(userdata);
 
     return (0 < (userdata->flags & flag) ? userdata : NULL);
 }
