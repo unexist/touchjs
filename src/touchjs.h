@@ -14,7 +14,7 @@
 
 /* Includes */
 #include <stdio.h>
-#include "duktape/duktape.h"
+#include "libs/duktape/duktape.h"
 
 /* Symbols */
 #define TJS_SYM_CLICK_CB "\xff" "__click_cb"

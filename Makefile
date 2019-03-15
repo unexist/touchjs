@@ -23,16 +23,16 @@ SRC_TOUCHJS= \
 	src/controls/slider.c
 
 SRC_SILICA= \
-	src/silica/NSRunningApplication+Silica.m \
-	src/silica/NSScreen+Silica.m \
-	src/silica/SIAccessibilityElement.m \
-	src/silica/SIApplication.m \
-	src/silica/SISystemWideElement.m \
-	src/silica/SIUniversalAccessHelper.m \
-	src/silica/SIWindow.m
+	src/libs/silica/NSRunningApplication+Silica.m \
+	src/libs/silica/NSScreen+Silica.m \
+	src/libs/silica/SIAccessibilityElement.m \
+	src/libs/silica/SIApplication.m \
+	src/libs/silica/SISystemWideElement.m \
+	src/libs/silica/SIUniversalAccessHelper.m \
+	src/libs/silica/SIWindow.m
 
 SRC_DUKTAPE= \
-	src/duktape/duktape.c
+	src/libs/duktape/duktape.c
 
 SOURCES=$(SRC_TOUCHJS) \
 	$(SRC_SILICA) \
