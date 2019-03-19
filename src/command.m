@@ -49,7 +49,7 @@ static duk_ret_t tjs_command_ctor(duk_context *ctx) {
 
     tjs_super_init(ctx, (TjsUserdata *)command);
 
-    TJS_LOG_DEBUG("flags=%d", command->flags);
+    TJS_LOG_OBJ(command);
 
     return 0;
 }
@@ -66,7 +66,7 @@ static duk_ret_t tjs_command_prototype_exec(duk_context *ctx) {
         TJS_FLAG_TYPE_COMMAND);
 
     if (NULL != command) {
-        TJS_LOG_DEBUG("flags=%d", command->flags);
+        TJS_LOG_OBJ(command);
 
         /* Create pipe */
         command->pipe = [NSPipe pipe];
@@ -107,7 +107,7 @@ static duk_ret_t tjs_command_prototype_getoutput(duk_context *ctx) {
         TJS_FLAG_TYPE_COMMAND);
 
     if (NULL != command) {
-        TJS_LOG_DEBUG("flags=%d", command->flags);
+        TJS_LOG_OBJ(command);
 
         /* Read output */
         NSFileHandle *file = command->pipe.fileHandleForReading;
@@ -139,7 +139,7 @@ static duk_ret_t tjs_command_prototype_tostring(duk_context *ctx) {
         TJS_FLAG_TYPE_COMMAND);
 
     if (NULL != command) {
-        TJS_LOG_DEBUG("flags=%d", command->flags);
+        TJS_LOG_OBJ(command);
 
         duk_push_sprintf(ctx, "flags=%d, value=%s",
             command->flags, command->value.asChar);
