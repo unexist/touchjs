@@ -56,6 +56,11 @@ tjs_attach(l1);
 tjs_attach(sc1);
 tjs_attach(s1);
 
+/* Windows */
+var win = new TjsWin();
+
+tjs_print(win);
+
 /* Dump */
 tjs_print(l1);
 tjs_print(b1);
