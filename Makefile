@@ -25,16 +25,8 @@ SRC_TJS_CONTROLS= \
 	src/controls/slider.c
 
 SRC_TJS_WINDOWS= \
-	src/windows/win.m
-
-SRC_LIB_SILICA= \
-	src/libs/silica/NSRunningApplication+Silica.m \
-	src/libs/silica/NSScreen+Silica.m \
-	src/libs/silica/SIAccessibilityElement.m \
-	src/libs/silica/SIApplication.m \
-	src/libs/silica/SISystemWideElement.m \
-	src/libs/silica/SIUniversalAccessHelper.m \
-	src/libs/silica/SIWindow.m
+	src/windows/win.m \
+	src/windows/wm.m
 
 SRC_LIB_DUKTAPE= \
 	src/libs/duktape/duktape.c
@@ -42,7 +34,6 @@ SRC_LIB_DUKTAPE= \
 SOURCES=$(SRC_TOUCHJS) \
 	$(SRC_TJS_CONTROLS) \
 	$(SRC_TJS_WINDOWS) \
-	$(SRC_LIB_SILICA) \
 	$(SRC_LIB_DUKTAPE)
 
 TEMP=$(SOURCES:.m=.o)
