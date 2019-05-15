@@ -57,6 +57,18 @@ static bool tjs_win_attr_is_settable(TjsWin *win, CFStringRef attrRef) {
     return (kAXErrorSuccess == result && settable);
 }
 
+static pid_t tjs_win_get_pid(TjsWin *win) {
+    pid_t pid = -1;
+
+    AXError result= AXUIElementGetPid(win->ref, &pid);
+
+    if (kAXErrorSuccess != result) {
+        pid = -1;
+    }
+
+    return pid;
+}
+
 /**
  * Native constructor
  *
@@ -264,6 +276,32 @@ static duk_ret_t tjs_win_prototype_gettitle(duk_context *ctx) {
 }
 
 /**
+ * Native win getPid prototype method
+ *
+ * @param[inout]  ctx  A #duk_context
+ **/
+
+static duk_ret_t tjs_win_prototype_getpid(duk_context *ctx) {
+    /* Get userdata */
+    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_WIN);
+
+    if (NULL != win) {
+        TJS_LOG_OBJ(win);
+
+        if (NULL != win->ref) {
+            pid_t pid = tjs_win_get_pid(win);
+
+            duk_push_int(ctx, (int)pid);
+
+           return 1;
+        }
+    }
+
+    return 0;
+}
+
+/**
  * Native win toString prototype method
  *
  * @param[inout]  ctx  A #duk_context
@@ -311,6 +349,8 @@ void tjs_win_init(duk_context *ctx) {
     //duk_put_prop_string(ctx, -2, "setRect");
     duk_push_c_function(ctx, tjs_win_prototype_gettitle, 0);
     duk_put_prop_string(ctx, -2, "getTitle");
+    duk_push_c_function(ctx, tjs_win_prototype_getpid, 0);
+    duk_put_prop_string(ctx, -2, "getPid");
     duk_push_c_function(ctx, tjs_win_prototype_tostring, 0);
     duk_put_prop_string(ctx, -2, "toString");
 
