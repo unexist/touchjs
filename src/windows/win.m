@@ -185,6 +185,31 @@ static duk_ret_t tjs_win_prototype_ishidden(duk_context *ctx) {
 }
 
 /**
+ * Native win isMinimized prototype method
+ *
+ * @param[inout]  ctx  A #duk_context
+ **/
+
+static duk_ret_t tjs_win_prototype_isminimized(duk_context *ctx) {
+    /* Get userdata */
+    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_WIN);
+
+    if (NULL != win) {
+        TJS_LOG_OBJ(win);
+
+        NSNumber *number = tjs_win_attr_get_number(win, kAXMinimizedAttribute);
+        Boolean isHidden = [number boolValue];
+
+        duk_push_boolean(ctx, (YES == isHidden));
+
+        return 1;
+    }
+
+    return 0;
+}
+
+/**
  * Native win show prototype method
  *
  * @param[inout]  ctx  A #duk_context
@@ -470,13 +495,18 @@ void tjs_win_init(duk_context *ctx) {
     duk_push_object(ctx);
 
     /* Register methods */
+
+    /* Modifiers */
     duk_push_c_function(ctx, tjs_win_prototype_isresizable, 0);
     duk_put_prop_string(ctx, -2, "isResizable");
     duk_push_c_function(ctx, tjs_win_prototype_ismovable, 0);
     duk_put_prop_string(ctx, -2, "isMovable");
     duk_push_c_function(ctx, tjs_win_prototype_ishidden, 0);
     duk_put_prop_string(ctx, -2, "isHidden");
+    duk_push_c_function(ctx, tjs_win_prototype_isminimized, 0);
+    duk_put_prop_string(ctx, -2, "isMinimized");
 
+    /* Actions */
     duk_push_c_function(ctx, tjs_win_prototype_show, 0);
     duk_put_prop_string(ctx, -2, "show");
     duk_push_c_function(ctx, tjs_win_prototype_hide, 0);
@@ -486,6 +516,7 @@ void tjs_win_init(duk_context *ctx) {
     duk_push_c_function(ctx, tjs_win_prototype_terminate, 0);
     duk_put_prop_string(ctx, -2, "terminate");
 
+    /* Geometry */
     duk_push_c_function(ctx, tjs_win_prototype_setxy, 2);
     duk_put_prop_string(ctx, -2, "setXY");
     duk_push_c_function(ctx, tjs_win_prototype_setwh, 2);

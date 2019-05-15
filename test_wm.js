@@ -9,6 +9,7 @@ wins.forEach(function (win) {
         ", rect=" + win.getRect() +
         ", movable=" + win.isMovable() +
         ", resizable=" + win.isResizable() +
+        ", minimized=" + win.isMinimized() +
         ", hidden=" + win.isHidden());
 
     if (win.isMovable())
