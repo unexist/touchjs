@@ -21,14 +21,28 @@ static bool tjs_win_attr_set(TjsWin *win, AXValueType typeRef,
         attrRef, valueRef));
 }
 
-static NSString *tjs_win_attr_get_string(TjsWin *win, CFStringRef attr) {
-    CFTypeRef ref;
+static NSString *tjs_win_attr_get_string(TjsWin *win, CFStringRef attrRef) {
+    CFTypeRef typeRef;
 
-    AXError result = AXUIElementCopyAttributeValue(win->ref, attr, &ref);
+    AXError result = AXUIElementCopyAttributeValue(win->ref, attrRef, &typeRef);
 
-    if (kAXErrorSuccess == result && ref) {
-        if (CFStringGetTypeID() == CFGetTypeID(ref)) {
-            return CFBridgingRelease(ref);
+    if (kAXErrorSuccess == result && typeRef) {
+        if (CFStringGetTypeID() == CFGetTypeID(typeRef)) {
+            return CFBridgingRelease(typeRef);
+        }
+    }
+
+    return NULL;
+}
+
+static NSNumber *tjs_win_attr_get_number(TjsWin *win, CFStringRef attrRef) {
+    CFTypeRef typeRef;
+
+    AXError result = AXUIElementCopyAttributeValue(win->ref, attrRef, &typeRef);
+
+    if (kAXErrorSuccess == result && typeRef) {
+        if (CFNumberGetTypeID() == CFGetTypeID(typeRef) || CFBooleanGetTypeID() == CFGetTypeID(typeRef)) {
+            return CFBridgingRelease(typeRef);
         }
     }
 
@@ -138,6 +152,31 @@ static duk_ret_t tjs_win_prototype_isresizable(duk_context *ctx) {
 
         duk_push_boolean(ctx,
             (tjs_win_attr_is_settable(win, kAXSizeAttribute) ? 1 : 0));
+
+        return 1;
+    }
+
+    return 0;
+}
+
+/**
+ * Native win isHidden prototype method
+ *
+ * @param[inout]  ctx  A #duk_context
+ **/
+
+static duk_ret_t tjs_win_prototype_ishidden(duk_context *ctx) {
+    /* Get userdata */
+    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_WIN);
+
+    if (NULL != win) {
+        TJS_LOG_OBJ(win);
+
+        NSNumber *number = tjs_win_attr_get_number(win, kAXHiddenAttribute);
+        Boolean isHidden = [number boolValue];
+
+        duk_push_boolean(ctx, (YES == isHidden));
 
         return 1;
     }
@@ -339,6 +378,9 @@ void tjs_win_init(duk_context *ctx) {
     duk_put_prop_string(ctx, -2, "isResizable");
     duk_push_c_function(ctx, tjs_win_prototype_ismovable, 0);
     duk_put_prop_string(ctx, -2, "isMovable");
+    duk_push_c_function(ctx, tjs_win_prototype_ishidden, 0);
+    duk_put_prop_string(ctx, -2, "isHidden");
+
     duk_push_c_function(ctx, tjs_win_prototype_setxy, 2);
     duk_put_prop_string(ctx, -2, "setXY");
     duk_push_c_function(ctx, tjs_win_prototype_setwh, 2);
@@ -347,6 +389,7 @@ void tjs_win_init(duk_context *ctx) {
     duk_put_prop_string(ctx, -2, "getRect");
     //duk_push_c_function(ctx, tjs_win_prototype_setrect, 1);
     //duk_put_prop_string(ctx, -2, "setRect");
+
     duk_push_c_function(ctx, tjs_win_prototype_gettitle, 0);
     duk_put_prop_string(ctx, -2, "getTitle");
     duk_push_c_function(ctx, tjs_win_prototype_getpid, 0);
