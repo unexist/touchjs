@@ -6,7 +6,10 @@ wins.forEach(function (win) {
     tjs_print(
         "win: title=" + win.getTitle() +
         ", pid=" + win.getPid() +
-        ", rect=" + win.getRect());
+        ", rect=" + win.getRect() +
+        ", movable=" + win.isMovable() +
+        ", resizable=" + win.isResizable() +
+        ", hidden=" + win.isHidden());
 
     if (win.isMovable())
         win.setXY(10, 10);
