@@ -5,6 +5,8 @@ var wins = wm.getWindows();
 wins.forEach(function (win) {
     tjs_print(
         "win: title=" + win.getTitle() +
+        ", role=" + win.getRole() +
+        ", subrole=" + win.getSubrole() +
         ", pid=" + win.getPid() +
         ", rect=" + win.getRect() +
         ", movable=" + win.isMovable() +
