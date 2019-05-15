@@ -436,6 +436,62 @@ static duk_ret_t tjs_win_prototype_gettitle(duk_context *ctx) {
 }
 
 /**
+ * Native win getRole prototype method
+ *
+ * @param[inout]  ctx  A #duk_context
+ **/
+
+static duk_ret_t tjs_win_prototype_getrole(duk_context *ctx) {
+    /* Get userdata */
+    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_WIN);
+
+    if (NULL != win) {
+        TJS_LOG_OBJ(win);
+
+        if (NULL != win->ref) {
+            NSString *role = tjs_win_attr_get_string(win, kAXRoleAttribute);
+
+            if (NULL != role) {
+                duk_push_string(ctx, [role UTF8String]);
+
+                return 1;
+            }
+        }
+    }
+
+    return 0;
+}
+
+/**
+ * Native win getSubrole prototype method
+ *
+ * @param[inout]  ctx  A #duk_context
+ **/
+
+static duk_ret_t tjs_win_prototype_getsubrole(duk_context *ctx) {
+    /* Get userdata */
+    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_WIN);
+
+    if (NULL != win) {
+        TJS_LOG_OBJ(win);
+
+        if (NULL != win->ref) {
+            NSString *subrole = tjs_win_attr_get_string(win, kAXSubroleAttribute);
+
+            if (NULL != subrole) {
+                duk_push_string(ctx, [subrole UTF8String]);
+
+                return 1;
+            }
+        }
+    }
+
+    return 0;
+}
+
+/**
  * Native win getPid prototype method
  *
  * @param[inout]  ctx  A #duk_context
@@ -527,8 +583,14 @@ void tjs_win_init(duk_context *ctx) {
     //duk_push_c_function(ctx, tjs_win_prototype_setrect, 1);
     //duk_put_prop_string(ctx, -2, "setRect");
 
+    /* Identifier */
     duk_push_c_function(ctx, tjs_win_prototype_gettitle, 0);
     duk_put_prop_string(ctx, -2, "getTitle");
+    duk_push_c_function(ctx, tjs_win_prototype_getrole, 0);
+    duk_put_prop_string(ctx, -2, "getRole");
+    duk_push_c_function(ctx, tjs_win_prototype_getsubrole, 0);
+    duk_put_prop_string(ctx, -2, "getSubrole");
+
     duk_push_c_function(ctx, tjs_win_prototype_getpid, 0);
     duk_put_prop_string(ctx, -2, "getPid");
 
