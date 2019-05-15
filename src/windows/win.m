@@ -185,6 +185,102 @@ static duk_ret_t tjs_win_prototype_ishidden(duk_context *ctx) {
 }
 
 /**
+ * Native win show prototype method
+ *
+ * @param[inout]  ctx  A #duk_context
+ **/
+
+static duk_ret_t tjs_win_prototype_show(duk_context *ctx) {
+    /* Get userdata */
+    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_WIN);
+
+    if (NULL != win) {
+        TJS_LOG_OBJ(win);
+
+        pid_t pid = tjs_win_get_pid(win);
+
+        if (-1 != pid) {
+            [[NSRunningApplication runningApplicationWithProcessIdentifier: pid] unhide];
+        }
+    }
+
+    return 0;
+}
+
+/**
+ * Native win hide prototype method
+ *
+ * @param[inout]  ctx  A #duk_context
+ **/
+
+static duk_ret_t tjs_win_prototype_hide(duk_context *ctx) {
+    /* Get userdata */
+    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_WIN);
+
+    if (NULL != win) {
+        TJS_LOG_OBJ(win);
+
+        pid_t pid = tjs_win_get_pid(win);
+
+        if (-1 != pid) {
+            [[NSRunningApplication runningApplicationWithProcessIdentifier: pid] hide];
+        }
+    }
+
+    return 0;
+}
+
+/**
+ * Native win kill prototype method
+ *
+ * @param[inout]  ctx  A #duk_context
+ **/
+
+static duk_ret_t tjs_win_prototype_kill(duk_context *ctx) {
+    /* Get userdata */
+    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_WIN);
+
+    if (NULL != win) {
+        TJS_LOG_OBJ(win);
+
+        pid_t pid = tjs_win_get_pid(win);
+
+        if (-1 != pid) {
+            [[NSRunningApplication runningApplicationWithProcessIdentifier: pid] terminate];
+        }
+    }
+
+    return 0;
+}
+
+/**
+ * Native win terminate prototype method
+ *
+ * @param[inout]  ctx  A #duk_context
+ **/
+
+static duk_ret_t tjs_win_prototype_terminate(duk_context *ctx) {
+    /* Get userdata */
+    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_WIN);
+
+    if (NULL != win) {
+        TJS_LOG_OBJ(win);
+
+        pid_t pid = tjs_win_get_pid(win);
+
+        if (-1 != pid) {
+            [[NSRunningApplication runningApplicationWithProcessIdentifier: pid] forceTerminate];
+        }
+    }
+
+    return 0;
+}
+
+/**
  * Native win setXY prototype method
  *
  * @param[inout]  ctx  A #duk_context
@@ -381,10 +477,20 @@ void tjs_win_init(duk_context *ctx) {
     duk_push_c_function(ctx, tjs_win_prototype_ishidden, 0);
     duk_put_prop_string(ctx, -2, "isHidden");
 
+    duk_push_c_function(ctx, tjs_win_prototype_show, 0);
+    duk_put_prop_string(ctx, -2, "show");
+    duk_push_c_function(ctx, tjs_win_prototype_hide, 0);
+    duk_put_prop_string(ctx, -2, "hide");
+    duk_push_c_function(ctx, tjs_win_prototype_kill, 0);
+    duk_put_prop_string(ctx, -2, "kill");
+    duk_push_c_function(ctx, tjs_win_prototype_terminate, 0);
+    duk_put_prop_string(ctx, -2, "terminate");
+
     duk_push_c_function(ctx, tjs_win_prototype_setxy, 2);
     duk_put_prop_string(ctx, -2, "setXY");
     duk_push_c_function(ctx, tjs_win_prototype_setwh, 2);
     duk_put_prop_string(ctx, -2, "setWH");
+
     duk_push_c_function(ctx, tjs_win_prototype_getrect, 0);
     duk_put_prop_string(ctx, -2, "getRect");
     //duk_push_c_function(ctx, tjs_win_prototype_setrect, 1);
@@ -394,6 +500,7 @@ void tjs_win_init(duk_context *ctx) {
     duk_put_prop_string(ctx, -2, "getTitle");
     duk_push_c_function(ctx, tjs_win_prototype_getpid, 0);
     duk_put_prop_string(ctx, -2, "getPid");
+
     duk_push_c_function(ctx, tjs_win_prototype_tostring, 0);
     duk_put_prop_string(ctx, -2, "toString");
 
