@@ -727,6 +727,7 @@ int main(int argc, char *argv[]) {
     tjs_global_init(_ctx);
     tjs_command_init(_ctx);
     tjs_win_init(_ctx);
+    tjs_wm_init(_ctx);
     tjs_scrubber_init(_ctx);
     tjs_button_init(_ctx);
     tjs_label_init(_ctx);
