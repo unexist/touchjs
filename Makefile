@@ -24,16 +24,17 @@ SRC_TJS_CONTROLS= \
 	src/controls/button.c \
 	src/controls/slider.c
 
-SRC_TJS_WINDOWS= \
-	src/windows/win.m \
-	src/windows/wm.m
+SRC_TJS_WM= \
+	src/wm/attr.m \
+	src/wm/win.m \
+	src/wm/wm.m
 
 SRC_LIB_DUKTAPE= \
 	src/libs/duktape/duktape.c
 
 SOURCES=$(SRC_TOUCHJS) \
 	$(SRC_TJS_CONTROLS) \
-	$(SRC_TJS_WINDOWS) \
+	$(SRC_TJS_WM) \
 	$(SRC_LIB_DUKTAPE)
 
 TEMP=$(SOURCES:.m=.o)
