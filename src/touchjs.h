@@ -14,12 +14,18 @@
 
 /* Includes */
 #include <stdio.h>
+
 #include "libs/duktape/duktape.h"
 
 /* Symbols */
 #define TJS_SYM_CLICK_CB "\xff" "__click_cb"
 #define TJS_SYM_SLIDE_CB "\xff" "__slide_cb"
 #define TJS_SYM_USERDATA "\xff" "__userdata"
+
+/* Package */
+#define PKG_NAME "TouchJS"
+#define PKG_VERSION "0.0"
+#define PKG_BUGREPORT "unexist@subforge.org"
 
 /* Flags */
 #define TJS_FLAG_TYPE_EMBED (1L << 0)
@@ -99,11 +105,8 @@ typedef struct tjs_widget_t {
     union tjs_value_t value;
 } TjsWidget;
 
-/* Globals */
-duk_context *_ctx;
-
 /* touchjs.m */
-void tjs_log(int loglevel, const char *func, int line, const char *fmt, ...);
+void tjs_log(int level, const char *func, int line, const char *fmt, ...);
 void tjs_fatal(void *userdata, const char *msg);
 void tjs_dump_stack(const char *func, int line, duk_context *ctx);
 void tjs_exit(void);
@@ -136,7 +139,6 @@ void tjs_userdata_free(TjsUserdata *userdata);
 
 /* super.c */
 void tjs_super_update(TjsUserdata *userdata);
-//void tjs_super_callback_add(duk_context *ctx, const char *sym);
 void tjs_super_callback_call(duk_context *ctx, const char *sym, int nargs);
 
 duk_ret_t tjs_super_prototype_setfgcolor(duk_context *ctx);

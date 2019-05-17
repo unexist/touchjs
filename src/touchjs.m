@@ -9,8 +9,10 @@
  * See the file COPYING for details.
  **/
 
-#import "touchjs.h"
 #import <Cocoa/Cocoa.h>
+
+#include <unistd.h>
+#include "touchjs.h"
 
 /* Constants */
 static const NSTouchBarItemIdentifier kGroupButton = @"org.subforge.group";
@@ -30,6 +32,9 @@ typedef struct tjs_embed_t {
 
 typedef struct tjs_touch_t {
     int flags;
+    int loglevel;
+
+    duk_context *ctx;
 
     /* Obj-c */
     NSTouchBar *bar;
@@ -143,12 +148,12 @@ static void tjs_embed_value(TjsEmbed *embed);
         TJS_LOG_DEBUG("flags=%d, idx=%d", embed->userdata->flags, idx);
 
         /* Get object and call callback if any */
-        duk_get_global_string(_ctx, [embed->identifier UTF8String]);
+        duk_get_global_string(touch.ctx, [embed->identifier UTF8String]);
 
-        if (duk_is_object(_ctx, -1)) {
-            tjs_super_callback_call(_ctx, TJS_SYM_CLICK_CB, 0);
+        if (duk_is_object(touch.ctx, -1)) {
+            tjs_super_callback_call(touch.ctx, TJS_SYM_CLICK_CB, 0);
         } else {
-            duk_pop(_ctx);
+            duk_pop(touch.ctx);
         }
     }
 }
@@ -181,13 +186,13 @@ static void tjs_embed_value(TjsEmbed *embed);
             widget, widget->flags, idx, value);
 
         /* Get object and call callback */
-        duk_get_global_string(_ctx, [embed->identifier UTF8String]);
+        duk_get_global_string(touch.ctx, [embed->identifier UTF8String]);
 
-        if (duk_is_object(_ctx, -1)) {
-            duk_push_int(_ctx, value);
-            tjs_super_callback_call(_ctx, TJS_SYM_SLIDE_CB, 1);
+        if (duk_is_object(touch.ctx, -1)) {
+            duk_push_int(touch.ctx, value);
+            tjs_super_callback_call(touch.ctx, TJS_SYM_SLIDE_CB, 1);
         } else {
-            duk_pop(_ctx);
+            duk_pop(touch.ctx);
         }
     }
 }
@@ -291,27 +296,56 @@ static void tjs_embed_value(TjsEmbed *embed);
  *           Helper           *
  ******************************/
 
+ /**
+  * Print usage info
+  **/
+
+ static void tjs_usage(void) {
+    NSLog(@"Usage: %s [OPTIONS]\n\n" \
+           "Options:\n" \
+           "  -f FILE           Eval file \n" \
+           "  -h                Show this help and exit\n" \
+           "  -v                Show version info and exit\n" \
+           "  -l LEVEL[,LEVEL]  Set logging levels (\n" \
+           "  -d                Print debugging messages\n" \
+           "\nPlease report bugs at %s\n",
+        PKG_NAME, PKG_BUGREPORT);
+}
+
+/**
+ * Print version info
+ **/
+
+static void tjs_version(void) {
+  NSLog(@"%s v%s - Copyright (c) 2019 Christoph Kappel\n" \
+         "Released under the GNU General Public License\n",
+        PKG_NAME, PKG_VERSION);
+}
+
 /**
  * Log handler
  *
- * @param[in]  loglevel  Log level
- * @param[in]  func      Name of the calling function
- * @param[in]  line      Line number of the call
- * @param[in]  fmt       Message format
- * @param[in]  ...       Variadic arguments
+ * @param[in]  level  Log level
+ * @param[in]  func   Name of the calling function
+ * @param[in]  line   Line number of the call
+ * @param[in]  fmt    Message format
+ * @param[in]  ...    Variadic arguments
  **/
 
-void tjs_log(int loglevel, const char *func, int line, const char *fmt, ...) {
+void tjs_log(int level, const char *func, int line, const char *fmt, ...) {
     va_list ap;
     char buf[255];
     int guard;
+
+    /* Check loglevel */
+    if(0 == (touch.loglevel & level)) return;
 
     /* Get variadic arguments */
     va_start(ap, fmt);
     vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
 
-    switch (loglevel) {
+    switch (level) {
         case TJS_LOGLEVEL_INFO:
             NSLog(@"[INFO] %s", buf);
             break;
@@ -324,6 +358,41 @@ void tjs_log(int loglevel, const char *func, int line, const char *fmt, ...) {
         case TJS_LOGLEVEL_DUK:
             NSLog(@"[DUK %s:%d] %s", func, line, buf);
     }
+}
+
+/**
+ * Parse loglevel string
+ *
+ * @param[in]  str  Loglevel string
+ *
+ * @return Parsed loglevel
+ **/
+
+static int tjs_level(const char *str) {
+    int level = 0;
+    char *tokens = NULL, *tok = NULL;
+
+    tokens = strdup(str);
+    tok    = strtok((char *)tokens, ",");
+
+    /* Parse levels */
+    while (tok) {
+        if (0 == strncasecmp(tok, "info", 4)) {
+            level |= TJS_LOGLEVEL_INFO;
+        } else if (0 == strncasecmp(tok, "error", 5)) {
+            level |= TJS_LOGLEVEL_ERROR;
+        } else if (0 == strncasecmp(tok, "duk", 3)) {
+            level |= TJS_LOGLEVEL_DUK;
+        } else if (0 == strncasecmp(tok, "debug", 5)) {
+            level |= TJS_LOGLEVEL_DEBUG;
+        }
+
+        tok = strtok(NULL, ",");
+    }
+
+  free(tokens);
+
+  return level;
 }
 
 /**
@@ -361,6 +430,8 @@ void tjs_dump_stack(const char *func, int line, duk_context *ctx) {
  **/
 
 void tjs_exit() {
+    duk_destroy_heap(touch.ctx);
+
     [NSApp terminate: NULL];
 }
 
@@ -641,7 +712,7 @@ void tjs_attach(duk_context *ctx, TjsUserdata *userdata, TjsUserdata *parent) {
             withObjCType: @encode(TjsEmbed *)]];
 
         /* Store global in context */
-        duk_put_global_string(_ctx, [embed->identifier UTF8String]);
+        duk_put_global_string(touch.ctx, [embed->identifier UTF8String]);
     }
 }
 
@@ -663,8 +734,8 @@ void tjs_detach(duk_context *ctx, TjsUserdata *userdata) {
 
         if (NULL != embed) {
             /* Overwrite global string with null aka remove it */
-            duk_push_null(_ctx);
-            duk_put_global_string(_ctx, [embed->identifier UTF8String]);
+            duk_push_null(touch.ctx);
+            duk_put_global_string(touch.ctx, [embed->identifier UTF8String]);
 
             free(embed);
         }
@@ -676,34 +747,37 @@ void tjs_detach(duk_context *ctx, TjsUserdata *userdata) {
  ******************************/
 
 /**
- * Read file
+ * Read and eval file
  *
- * @param[in]  fileName  Name of file to load
- *
- * @return Read content
+ * @param[in]  source  Name of file to load
  **/
 
-static char *tjs_read_file(NSString *fileName) {
-    TJS_LOG_INFO("Loading file %s", [fileName UTF8String]);
+static void tjs_eval_file(char *source) {
+    TJS_LOG_INFO("Loading file %s", source);
 
     /* Load file */
-    NSFileHandle *file = [NSFileHandle fileHandleForReadingAtPath: fileName];
+    NSFileHandle *file = [NSFileHandle fileHandleForReadingAtPath:
+        [NSString stringWithUTF8String: source]];
 
     if (NULL == file) {
-        TJS_LOG_ERROR("Failed to open file file %s", [fileName UTF8String]);
+        TJS_LOG_ERROR("Failed to open file file %s", source);
 
-        return NULL;
+        return;
     }
 
     /* Read and convert data */
     NSData *buffer = [file readDataToEndOfFile];
-
-    NSString *data = [[NSString alloc] initWithData:buffer
-        encoding:NSUTF8StringEncoding];
+    NSString *data = [[NSString alloc] initWithData: buffer
+        encoding: NSUTF8StringEncoding];
 
     [file closeFile];
 
-    return (char *)[data UTF8String];
+    if (NULL != data) {
+        /* Just eval the content */
+        TJS_LOG_INFO("Eval'ing file %s", source);
+
+        duk_eval_string_noresult(touch.ctx, (char *)[data UTF8String]);
+    }
 }
 
 /**
@@ -719,32 +793,37 @@ int main(int argc, char *argv[]) {
     [NSApplication sharedApplication];
 
     touch.embedded = [NSMutableArray arrayWithCapacity: 0];
+    touch.loglevel = (TJS_LOGLEVEL_INFO|TJS_LOGLEVEL_DUK|TJS_LOGLEVEL_ERROR);
 
     /* Create duk context */
-    _ctx = duk_create_heap(NULL, NULL, NULL, NULL, tjs_fatal);
+    touch.ctx = duk_create_heap(NULL, NULL, NULL, NULL, tjs_fatal);
 
     /* Register functions */
-    tjs_global_init(_ctx);
-    tjs_command_init(_ctx);
-    tjs_win_init(_ctx);
-    tjs_wm_init(_ctx);
-    tjs_scrubber_init(_ctx);
-    tjs_button_init(_ctx);
-    tjs_label_init(_ctx);
-    tjs_slider_init(_ctx);
+    tjs_global_init(touch.ctx);
+    tjs_command_init(touch.ctx);
+    tjs_win_init(touch.ctx);
+    tjs_wm_init(touch.ctx);
+    tjs_scrubber_init(touch.ctx);
+    tjs_button_init(touch.ctx);
+    tjs_label_init(touch.ctx);
+    tjs_slider_init(touch.ctx);
 
-    /* Source file if any */
-    if (1 < argc) {
-        NSString *fileName = [NSString stringWithUTF8String: argv[1]];
+    /* Commandline arguments */
+    int c, fileOptId = -1;
 
-        char *buffer = tjs_read_file(fileName);
-
-        if (NULL != buffer) {
-            /* Just eval the content */
-            TJS_LOG_INFO("Executing file %s", argv[1]);
-
-            duk_eval_string_noresult(_ctx, buffer);
+    while (-1 != (c = getopt(argc, argv, "df:hl:v"))) {
+        switch (c) {
+            case 'd': touch.loglevel |= TJS_LOGLEVEL_DEBUG; break;
+            case 'f': fileOptId = optind - 1;               break;
+            case 'h': tjs_usage();                          return 0;
+            case 'l': touch.loglevel = tjs_level(optarg);   break;
+            case 'v': tjs_version();                        return 0;
         }
+    }
+
+    /* Eval file after debug/loglevel is set */
+    if (-1 != fileOptId) {
+        tjs_eval_file(argv[fileOptId]);
     }
 
     /* Create and run application */
@@ -755,7 +834,7 @@ int main(int argc, char *argv[]) {
     [NSApp run];
 
     /* Tidy up */
-    duk_destroy_heap(_ctx);
+    tjs_exit();
 
     return 0;
 }
