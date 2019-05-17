@@ -11,6 +11,7 @@
 
 #import "../touchjs.h"
 #import "win.h"
+#import "attr.h"
 
 /* Types */
 typedef struct tjs_wm_t {
@@ -134,7 +135,7 @@ void tjs_wm_init(duk_context *ctx) {
     duk_push_object(ctx);
 
     /* Register methods */
-    duk_push_c_function(ctx, tjs_wm_prototype_getwindows, 0);
+    duk_push_c_function(ctx, tjs_wm_prototype_getwindows, 1);
     duk_put_prop_string(ctx, -2, "getWindows");
     duk_push_c_function(ctx, tjs_wm_prototype_tostring, 0);
     duk_put_prop_string(ctx, -2, "toString");

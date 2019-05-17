@@ -15,8 +15,7 @@
 #import <Cocoa/Cocoa.h>
 
 /* Types */
-typedef struct tjs_win_t
-{
+typedef struct tjs_win_t {
     int flags;
 
     /* Obj-c */
