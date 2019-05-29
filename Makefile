@@ -25,9 +25,11 @@ SRC_TJS_CONTROLS= \
 	src/controls/slider.c
 
 SRC_TJS_WM= \
+	src/wm/wm.m \
+	src/wm/frame.m \
 	src/wm/attr.m \
-	src/wm/win.m \
-	src/wm/wm.m
+	src/wm/screen.m \
+	src/wm/win.m
 
 SRC_LIB_DUKTAPE= \
 	src/libs/duktape/duktape.c

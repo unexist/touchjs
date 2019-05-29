@@ -801,11 +801,14 @@ int main(int argc, char *argv[]) {
     /* Register functions */
     tjs_global_init(touch.ctx);
     tjs_command_init(touch.ctx);
-    tjs_win_init(touch.ctx);
+
     tjs_wm_init(touch.ctx);
+    tjs_win_init(touch.ctx);
+    tjs_screen_init(touch.ctx);
+
     tjs_scrubber_init(touch.ctx);
-    tjs_button_init(touch.ctx);
     tjs_label_init(touch.ctx);
+    tjs_button_init(touch.ctx);
     tjs_slider_init(touch.ctx);
 
     /* Commandline arguments */
