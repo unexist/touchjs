@@ -13,6 +13,48 @@
 #import "win.h"
 #import "attr.h"
 
+/* Flags */
+#define TJS_WIN_SIGNAL_SHOW      (1 << 0)
+#define TJS_WIN_SIGNAL_HIDE      (1 << 1)
+#define TJS_WIN_SIGNAL_KILL      (1 << 2)
+#define TJS_WIN_SIGNAL_TERMINATE (1 << 3)
+
+static duk_ret_t tjs_win_is_settable(duk_context *ctx, CFStringRef attrRef) {
+    /* Get userdata */
+    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_WIN);
+
+    if (NULL != win) {
+        TJS_LOG_OBJ(win);
+
+        duk_push_boolean(ctx,
+            (tjs_attr_is_settable(win->ref, attrRef) ? 1 : 0));
+
+        return 1;
+    }
+
+    return 0;
+}
+
+static duk_ret_t tjs_win_has_attr(duk_context *ctx, CFStringRef attrRef) {
+    /* Get userdata */
+    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_WIN);
+
+    if (NULL != win) {
+        TJS_LOG_OBJ(win);
+
+        NSNumber *number = tjs_attr_get_number(win->ref, attrRef);
+        Boolean isHidden = [number boolValue];
+
+        duk_push_boolean(ctx, (YES == isHidden));
+
+        return 1;
+    }
+
+    return 0;
+}
+
 static pid_t tjs_win_get_pid(TjsWin *win) {
     pid_t pid = -1;
 
@@ -23,6 +65,40 @@ static pid_t tjs_win_get_pid(TjsWin *win) {
     }
 
     return pid;
+}
+
+static duk_ret_t tjs_win_signal(duk_context *ctx, int signal) {
+     /* Get userdata */
+    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_WIN);
+
+    if (NULL != win) {
+        TJS_LOG_OBJ(win);
+
+        pid_t pid = tjs_win_get_pid(win);
+
+        if (-1 != pid) {
+            switch (signal) {
+                case TJS_WIN_SIGNAL_SHOW:
+                    [[NSRunningApplication runningApplicationWithProcessIdentifier: pid] unhide];
+                    break;
+
+                case TJS_WIN_SIGNAL_HIDE:
+                    [[NSRunningApplication runningApplicationWithProcessIdentifier: pid] hide];
+                    break;
+
+                case TJS_WIN_SIGNAL_KILL:
+                    [[NSRunningApplication runningApplicationWithProcessIdentifier: pid] terminate];
+                    break;
+
+                case TJS_WIN_SIGNAL_TERMINATE:
+                    [[NSRunningApplication runningApplicationWithProcessIdentifier: pid] forceTerminate];
+                    break;
+            }
+        }
+    }
+
+    return 0;
 }
 
 /**
@@ -62,20 +138,7 @@ static duk_ret_t tjs_win_ctor(duk_context *ctx) {
  **/
 
 static duk_ret_t tjs_win_prototype_ismovable(duk_context *ctx) {
-    /* Get userdata */
-    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
-        TJS_FLAG_TYPE_WIN);
-
-    if (NULL != win) {
-        TJS_LOG_OBJ(win);
-
-        duk_push_boolean(ctx,
-            (tjs_win_attr_is_settable(win, kAXPositionAttribute) ? 1 : 0));
-
-        return 1;
-    }
-
-    return 0;
+    return tjs_win_is_settable(ctx, kAXPositionAttribute);
 }
 
 /**
@@ -85,20 +148,7 @@ static duk_ret_t tjs_win_prototype_ismovable(duk_context *ctx) {
  **/
 
 static duk_ret_t tjs_win_prototype_isresizable(duk_context *ctx) {
-    /* Get userdata */
-    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
-        TJS_FLAG_TYPE_WIN);
-
-    if (NULL != win) {
-        TJS_LOG_OBJ(win);
-
-        duk_push_boolean(ctx,
-            (tjs_win_attr_is_settable(win, kAXSizeAttribute) ? 1 : 0));
-
-        return 1;
-    }
-
-    return 0;
+    return tjs_win_is_settable(ctx, kAXSizeAttribute);
 }
 
 /**
@@ -108,22 +158,7 @@ static duk_ret_t tjs_win_prototype_isresizable(duk_context *ctx) {
  **/
 
 static duk_ret_t tjs_win_prototype_ishidden(duk_context *ctx) {
-    /* Get userdata */
-    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
-        TJS_FLAG_TYPE_WIN);
-
-    if (NULL != win) {
-        TJS_LOG_OBJ(win);
-
-        NSNumber *number = tjs_win_attr_get_number(win, kAXHiddenAttribute);
-        Boolean isHidden = [number boolValue];
-
-        duk_push_boolean(ctx, (YES == isHidden));
-
-        return 1;
-    }
-
-    return 0;
+    return tjs_win_has_attr(ctx, kAXHiddenAttribute);
 }
 
 /**
@@ -133,21 +168,26 @@ static duk_ret_t tjs_win_prototype_ishidden(duk_context *ctx) {
  **/
 
 static duk_ret_t tjs_win_prototype_isminimized(duk_context *ctx) {
-    /* Get userdata */
-    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
-        TJS_FLAG_TYPE_WIN);
+    return tjs_win_has_attr(ctx, kAXMinimizedAttribute);
+}
 
-    if (NULL != win) {
-        TJS_LOG_OBJ(win);
+/**
+ * Native win isNormalWindow prototype method
+ *
+ * @param[inout]  ctx  A #duk_context
+ **/
 
-        NSNumber *number = tjs_win_attr_get_number(win, kAXMinimizedAttribute);
-        Boolean isHidden = [number boolValue];
+static duk_ret_t tjs_win_prototype_isnormalwindow(duk_context *ctx) {
+    return 0;
+}
 
-        duk_push_boolean(ctx, (YES == isHidden));
+/**
+ * Native win isSheet prototype method
+ *
+ * @param[inout]  ctx  A #duk_context
+ **/
 
-        return 1;
-    }
-
+static duk_ret_t tjs_win_prototype_issheet(duk_context *ctx) {
     return 0;
 }
 
@@ -158,21 +198,7 @@ static duk_ret_t tjs_win_prototype_isminimized(duk_context *ctx) {
  **/
 
 static duk_ret_t tjs_win_prototype_show(duk_context *ctx) {
-    /* Get userdata */
-    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
-        TJS_FLAG_TYPE_WIN);
-
-    if (NULL != win) {
-        TJS_LOG_OBJ(win);
-
-        pid_t pid = tjs_win_get_pid(win);
-
-        if (-1 != pid) {
-            [[NSRunningApplication runningApplicationWithProcessIdentifier: pid] unhide];
-        }
-    }
-
-    return 0;
+    return tjs_win_signal(ctx, TJS_WIN_SIGNAL_SHOW);
 }
 
 /**
@@ -182,21 +208,7 @@ static duk_ret_t tjs_win_prototype_show(duk_context *ctx) {
  **/
 
 static duk_ret_t tjs_win_prototype_hide(duk_context *ctx) {
-    /* Get userdata */
-    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
-        TJS_FLAG_TYPE_WIN);
-
-    if (NULL != win) {
-        TJS_LOG_OBJ(win);
-
-        pid_t pid = tjs_win_get_pid(win);
-
-        if (-1 != pid) {
-            [[NSRunningApplication runningApplicationWithProcessIdentifier: pid] hide];
-        }
-    }
-
-    return 0;
+    return tjs_win_signal(ctx, TJS_WIN_SIGNAL_HIDE);
 }
 
 /**
@@ -206,21 +218,7 @@ static duk_ret_t tjs_win_prototype_hide(duk_context *ctx) {
  **/
 
 static duk_ret_t tjs_win_prototype_kill(duk_context *ctx) {
-    /* Get userdata */
-    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
-        TJS_FLAG_TYPE_WIN);
-
-    if (NULL != win) {
-        TJS_LOG_OBJ(win);
-
-        pid_t pid = tjs_win_get_pid(win);
-
-        if (-1 != pid) {
-            [[NSRunningApplication runningApplicationWithProcessIdentifier: pid] terminate];
-        }
-    }
-
-    return 0;
+    return tjs_win_signal(ctx, TJS_WIN_SIGNAL_KILL);
 }
 
 /**
@@ -230,21 +228,7 @@ static duk_ret_t tjs_win_prototype_kill(duk_context *ctx) {
  **/
 
 static duk_ret_t tjs_win_prototype_terminate(duk_context *ctx) {
-    /* Get userdata */
-    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
-        TJS_FLAG_TYPE_WIN);
-
-    if (NULL != win) {
-        TJS_LOG_OBJ(win);
-
-        pid_t pid = tjs_win_get_pid(win);
-
-        if (-1 != pid) {
-            [[NSRunningApplication runningApplicationWithProcessIdentifier: pid] forceTerminate];
-        }
-    }
-
-    return 0;
+    return tjs_win_signal(ctx, TJS_WIN_SIGNAL_TERMINATE);
 }
 
 /**
@@ -262,14 +246,16 @@ static duk_ret_t tjs_win_prototype_setxy(duk_context *ctx) {
         TJS_LOG_OBJ(win);
 
         if (NULL != win->ref) {
+            TJS_DSTACK(ctx);
+
             CGPoint point = {
                 .x = duk_require_int(ctx, -1),
                 .y = duk_require_int(ctx, -2)
             };
 
-            TJS_LOG_DEBUG("x=%d, y=%d", point.x, point.y);
+            TJS_LOG_DUK("x=%f, y=%f", point.x, point.y);
 
-            tjs_win_attr_set(win, kAXValueCGPointType,
+            tjs_attr_set(win->ref, kAXValueCGPointType,
                 kAXPositionAttribute, (void *)&point);
         }
     }
@@ -297,9 +283,9 @@ static duk_ret_t tjs_win_prototype_setwh(duk_context *ctx) {
                 .height = duk_require_int(ctx, -2)
             };
 
-            TJS_LOG_DEBUG("w=%d, h=%d", size.width, size.height);
+            TJS_LOG_DEBUG("w=%f, h=%f", size.width, size.height);
 
-            tjs_win_attr_set(win, kAXValueCGSizeType,
+            tjs_attr_set(win->ref, kAXValueCGSizeType,
                 kAXSizeAttribute, (void *)&size);
         }
     }
@@ -308,12 +294,12 @@ static duk_ret_t tjs_win_prototype_setwh(duk_context *ctx) {
 }
 
 /**
- * Native win getRect prototype method
+ * Native win getFrame prototype method
  *
  * @param[inout]  ctx  A #duk_context
  **/
 
-static duk_ret_t tjs_win_prototype_getrect(duk_context *ctx) {
+static duk_ret_t tjs_win_prototype_getframe(duk_context *ctx) {
     /* Get userdata */
     TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
         TJS_FLAG_TYPE_WIN);
@@ -325,24 +311,57 @@ static duk_ret_t tjs_win_prototype_getrect(duk_context *ctx) {
             CGPoint point;
             CGSize size;
 
-            tjs_win_attr_get(win, kAXValueCGPointType,
+            tjs_attr_get(win->ref, kAXValueCGPointType,
                 kAXPositionAttribute, (void *)&point);
-            tjs_win_attr_get(win, kAXValueCGSizeType,
+            tjs_attr_get(win->ref, kAXValueCGSizeType,
                 kAXSizeAttribute, (void *)&size);
 
-            /* Add pos and size to array */
-            duk_idx_t aryIdx = duk_push_array(ctx);
+            win->frame.x      = point.x;
+            win->frame.y      = point.y;
+            win->frame.width  = size.width;
+            win->frame.height = size.height;
 
-            duk_push_int(ctx, point.x);
-            duk_put_prop_index(ctx, aryIdx, 0);
-            duk_push_int(ctx, point.y);
-            duk_put_prop_index(ctx, aryIdx, 1);
-            duk_push_int(ctx, size.width);
-            duk_put_prop_index(ctx, aryIdx, 2);
-            duk_push_int(ctx, size.height);
-            duk_put_prop_index(ctx, aryIdx, 3);
+            tjs_frame_to_array(&(win->frame), ctx);
 
             return 1;
+        }
+    }
+
+    return 0;
+}
+
+/**
+ * Native win setFrame prototype method
+ *
+ * @param[inout]  ctx  A #duk_context
+ **/
+
+static duk_ret_t tjs_win_prototype_setframe(duk_context *ctx) {
+    /* Get userdata */
+    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_WIN);
+
+    if (NULL != win) {
+        TJS_LOG_OBJ(win);
+
+        if (NULL != win->ref) {
+            TjsFrame frame;
+            CGPoint point;
+            CGSize size;
+
+            tjs_frame_from_array(&frame, ctx);
+
+            point.x = frame.x;
+            point.y = frame.y;
+            size.width = frame.width;
+            size.height = frame.height;
+
+            tjs_attr_set(win->ref, kAXValueCGPointType,
+                kAXPositionAttribute, (void *)&point);
+            tjs_attr_set(win->ref, kAXValueCGSizeType,
+                kAXSizeAttribute, (void *)&size);
+
+            return 0;
         }
     }
 
@@ -364,7 +383,7 @@ static duk_ret_t tjs_win_prototype_gettitle(duk_context *ctx) {
         TJS_LOG_OBJ(win);
 
         if (NULL != win->ref) {
-            NSString *title = tjs_win_attr_get_string(win, kAXTitleAttribute);
+            NSString *title = tjs_attr_get_string(win->ref, kAXTitleAttribute);
 
             if (NULL != title) {
                 duk_push_string(ctx, [title UTF8String]);
@@ -392,7 +411,7 @@ static duk_ret_t tjs_win_prototype_getrole(duk_context *ctx) {
         TJS_LOG_OBJ(win);
 
         if (NULL != win->ref) {
-            NSString *role = tjs_win_attr_get_string(win, kAXRoleAttribute);
+            NSString *role = tjs_attr_get_string(win->ref, kAXRoleAttribute);
 
             if (NULL != role) {
                 duk_push_string(ctx, [role UTF8String]);
@@ -420,7 +439,7 @@ static duk_ret_t tjs_win_prototype_getsubrole(duk_context *ctx) {
         TJS_LOG_OBJ(win);
 
         if (NULL != win->ref) {
-            NSString *subrole = tjs_win_attr_get_string(win, kAXSubroleAttribute);
+            NSString *subrole = tjs_attr_get_string(win->ref, kAXSubroleAttribute);
 
             if (NULL != subrole) {
                 duk_push_string(ctx, [subrole UTF8String]);
@@ -504,6 +523,12 @@ void tjs_win_init(duk_context *ctx) {
     duk_push_c_function(ctx, tjs_win_prototype_isminimized, 0);
     duk_put_prop_string(ctx, -2, "isMinimized");
 
+    /* Types */
+    duk_push_c_function(ctx, tjs_win_prototype_isnormalwindow, 0);
+    duk_put_prop_string(ctx, -2, "isNormalWindow");
+    duk_push_c_function(ctx, tjs_win_prototype_issheet, 0);
+    duk_put_prop_string(ctx, -2, "isSheet");
+
     /* Actions */
     duk_push_c_function(ctx, tjs_win_prototype_show, 0);
     duk_put_prop_string(ctx, -2, "show");
@@ -520,10 +545,10 @@ void tjs_win_init(duk_context *ctx) {
     duk_push_c_function(ctx, tjs_win_prototype_setwh, 2);
     duk_put_prop_string(ctx, -2, "setWH");
 
-    duk_push_c_function(ctx, tjs_win_prototype_getrect, 0);
-    duk_put_prop_string(ctx, -2, "getRect");
-    //duk_push_c_function(ctx, tjs_win_prototype_setrect, 1);
-    //duk_put_prop_string(ctx, -2, "setRect");
+    duk_push_c_function(ctx, tjs_win_prototype_getframe, 0);
+    duk_put_prop_string(ctx, -2, "getFrame");
+    duk_push_c_function(ctx, tjs_win_prototype_setframe, 1);
+    duk_put_prop_string(ctx, -2, "setFrame");
 
     /* Identifier */
     duk_push_c_function(ctx, tjs_win_prototype_gettitle, 0);
