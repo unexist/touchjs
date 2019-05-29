@@ -10,21 +10,21 @@
  **/
 
 #import "../touchjs.h"
-#import "win.h"
+#import "attr.h"
 
-bool tjs_win_attr_set(TjsWin *win, AXValueType typeRef,
+bool tjs_attr_set(AXUIElementRef ref, AXValueType typeRef,
         CFStringRef attrRef, void *value)
 {
     AXValueRef valueRef = AXValueCreate(typeRef, value);
 
-    return (kAXErrorSuccess == AXUIElementSetAttributeValue(win->ref,
+    return (kAXErrorSuccess == AXUIElementSetAttributeValue(ref,
         attrRef, valueRef));
 }
 
-NSString *tjs_win_attr_get_string(TjsWin *win, CFStringRef attrRef) {
+NSString *tjs_attr_get_string(AXUIElementRef ref, CFStringRef attrRef) {
     CFTypeRef typeRef;
 
-    AXError result = AXUIElementCopyAttributeValue(win->ref, attrRef, &typeRef);
+    AXError result = AXUIElementCopyAttributeValue(ref, attrRef, &typeRef);
 
     if (kAXErrorSuccess == result && typeRef) {
         if (CFStringGetTypeID() == CFGetTypeID(typeRef)) {
@@ -35,10 +35,10 @@ NSString *tjs_win_attr_get_string(TjsWin *win, CFStringRef attrRef) {
     return NULL;
 }
 
-NSNumber *tjs_win_attr_get_number(TjsWin *win, CFStringRef attrRef) {
+NSNumber *tjs_attr_get_number(AXUIElementRef ref, CFStringRef attrRef) {
     CFTypeRef typeRef;
 
-    AXError result = AXUIElementCopyAttributeValue(win->ref, attrRef, &typeRef);
+    AXError result = AXUIElementCopyAttributeValue(ref, attrRef, &typeRef);
 
     if (kAXErrorSuccess == result && typeRef) {
         if (CFNumberGetTypeID() == CFGetTypeID(typeRef) || CFBooleanGetTypeID() == CFGetTypeID(typeRef)) {
@@ -49,12 +49,12 @@ NSNumber *tjs_win_attr_get_number(TjsWin *win, CFStringRef attrRef) {
     return NULL;
 }
 
-bool tjs_win_attr_get(TjsWin *win, AXValueType typeRef,
+bool tjs_attr_get(AXUIElementRef ref, AXValueType typeRef,
         CFStringRef attrRef, void *value)
 {
     CFTypeRef valueRef;
 
-    AXError result = AXUIElementCopyAttributeValue(win->ref, attrRef, &valueRef);
+    AXError result = AXUIElementCopyAttributeValue(ref, attrRef, &valueRef);
 
     if (kAXErrorSuccess == result && valueRef) {
         return AXValueGetValue(valueRef, typeRef, value);
@@ -63,9 +63,9 @@ bool tjs_win_attr_get(TjsWin *win, AXValueType typeRef,
     return false;
 }
 
-bool tjs_win_attr_is_settable(TjsWin *win, CFStringRef attrRef) {
+bool tjs_attr_is_settable(AXUIElementRef ref, CFStringRef attrRef) {
     Boolean settable = false;
-    AXError result = AXUIElementIsAttributeSettable(win->ref,
+    AXError result = AXUIElementIsAttributeSettable(ref,
         attrRef, &settable);
 
     return (kAXErrorSuccess == result && settable);

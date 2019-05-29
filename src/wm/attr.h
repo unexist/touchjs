@@ -1,7 +1,7 @@
 /**
  * @package TouchJS
  *
- * @file Win header
+ * @file Attribute header
  * @copyright 2019 Christoph Kappel <unexist@subforge.org>
  * @version $Id$
  *
@@ -9,15 +9,15 @@
  * See the file COPYING for details.
  **/
 
-#ifndef TJS_WIN_ATTR_H
-#define TJS_WIN_ATTR_H
+#ifndef TJS_ATTR_H
+#define TJS_ATTR_H 1
 
-#import "win.h"
+#import <Cocoa/Cocoa.h>
 
-bool tjs_win_attr_set(TjsWin *win, AXValueType typeRef, CFStringRef attrRef, void *value);
-NSString *tjs_win_attr_get_string(TjsWin *win, CFStringRef attrRef);
-NSNumber *tjs_win_attr_get_number(TjsWin *win, CFStringRef attrRef);
-bool tjs_win_attr_get(TjsWin *win, AXValueType typeRef, CFStringRef attrRef, void *value);
-bool tjs_win_attr_is_settable(TjsWin *win, CFStringRef attrRef);
+bool tjs_attr_set(AXUIElementRef ref, AXValueType typeRef, CFStringRef attrRef, void *value);
+NSString *tjs_attr_get_string(AXUIElementRef ref, CFStringRef attrRef);
+NSNumber *tjs_attr_get_number(AXUIElementRef ref, CFStringRef attrRef);
+bool tjs_attr_get(AXUIElementRef ref, AXValueType typeRef, CFStringRef attrRef, void *value);
+bool tjs_attr_is_settable(AXUIElementRef ref, CFStringRef attrRef);
 
-#endif /* TJS_WIN_ATTR_H */
+#endif /* TJS_ATTR_H */
