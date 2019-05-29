@@ -10,13 +10,16 @@
  **/
 
 #ifndef TJS_WIN_H
-#define TJS_WIN_H
+#define TJS_WIN_H 1
 
 #import <Cocoa/Cocoa.h>
+#import "frame.h"
 
 /* Types */
 typedef struct tjs_win_t {
     int flags;
+
+    TjsFrame frame;
 
     /* Obj-c */
     AXUIElementRef ref;
