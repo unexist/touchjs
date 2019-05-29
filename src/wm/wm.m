@@ -10,6 +10,7 @@
  **/
 
 #import "../touchjs.h"
+#import "screen.h"
 #import "win.h"
 #import "attr.h"
 
@@ -102,6 +103,53 @@ static duk_ret_t tjs_wm_prototype_getwindows(duk_context *ctx) {
 }
 
 /**
+ * Native wm getScreens prototype method
+ *
+ * @param[inout]  ctx  A #duk_context
+ **/
+
+static duk_ret_t tjs_wm_prototype_getscreens(duk_context *ctx) {
+    /* Get userdata */
+    TjsWM *wm = (TjsWM *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_WM);
+
+    if (NULL != wm) {
+        TJS_LOG_OBJ(wm);
+
+        duk_idx_t aryIdx = duk_push_array(ctx);
+        int nscreens = 0;
+
+        /* Find screens */
+        for (NSScreen *screen1 in [NSScreen screens]) {
+            /* Create new TjsScreen object and add it to array */
+            duk_get_global_string(ctx, "TjsScreen");
+            duk_new(ctx, 0);
+
+            duk_dup_top(ctx);
+            duk_put_prop_index(ctx, aryIdx, nscreens++);
+
+            /* Add frame*/
+            TjsScreen *screen2 = (TjsScreen *)tjs_userdata_from(
+                ctx, TJS_FLAG_TYPE_SCREEN);
+
+            if (NULL != screen2) {
+                /* Frame */
+                NSRect frame = [screen1 frame];
+
+                screen2->frame.x      = NSMinX(frame);
+                screen2->frame.y      = NSMinY(frame);
+                screen2->frame.width  = NSWidth(frame);
+                screen2->frame.height = NSHeight(frame);
+            }
+        }
+
+        return 1;
+    }
+
+    return 0;
+}
+
+/**
  * Native label getValue prototype method
  *
  * @param[inout]  ctx  A #duk_context
@@ -137,6 +185,8 @@ void tjs_wm_init(duk_context *ctx) {
     /* Register methods */
     duk_push_c_function(ctx, tjs_wm_prototype_getwindows, 1);
     duk_put_prop_string(ctx, -2, "getWindows");
+    duk_push_c_function(ctx, tjs_wm_prototype_getscreens, 1);
+    duk_put_prop_string(ctx, -2, "getScreens");
     duk_push_c_function(ctx, tjs_wm_prototype_tostring, 0);
     duk_put_prop_string(ctx, -2, "toString");
 
