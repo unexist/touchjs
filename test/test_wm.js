@@ -11,7 +11,9 @@ screens.forEach(function (screen) {
 /* Windows */
 var wins = wm.getWindows();
 
-wins.forEach(function (win) {
+wins.filter(function (win) {
+    return win.isNormalWindow();
+}).forEach(function (win) {
     tjs_print("win: title=" + win.getTitle() +
         ", role=" + win.getRole() +
         ", subrole=" + win.getSubrole() +
