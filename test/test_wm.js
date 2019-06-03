@@ -20,7 +20,9 @@ wins.forEach(function (win) {
         ", movable=" + win.isMovable() +
         ", resizable=" + win.isResizable() +
         ", minimized=" + win.isMinimized() +
-        ", hidden=" + win.isHidden()
+        ", hidden=" + win.isHidden() +
+        ", normal=" + win.isNormalWindow() +
+        ", sheet=" + win.isSheet()
     );
 
     /*if (win.isMovable())
