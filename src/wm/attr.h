@@ -14,7 +14,8 @@
 
 #import <Cocoa/Cocoa.h>
 
-bool tjs_attr_set(AXUIElementRef ref, AXValueType typeRef, CFStringRef attrRef, void *value);
+bool tjs_attr_set_value(AXUIElementRef ref, CFStringRef attrRef, CFTypeRef value);
+bool tjs_attr_set_typed_value(AXUIElementRef ref, CFStringRef attrRef, AXValueType typeRef, void *value);
 NSString *tjs_attr_get_string(AXUIElementRef ref, CFStringRef attrRef);
 NSNumber *tjs_attr_get_number(AXUIElementRef ref, CFStringRef attrRef);
 bool tjs_attr_get(AXUIElementRef ref, AXValueType typeRef, CFStringRef attrRef, void *value);
