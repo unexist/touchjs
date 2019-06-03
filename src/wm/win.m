@@ -36,6 +36,31 @@ static duk_ret_t tjs_win_is_settable(duk_context *ctx, CFStringRef attrRef) {
     return 0;
 }
 
+static duk_ret_t tjs_win_has_role(duk_context *ctx, CFStringRef attrRef,
+        CFStringRef roleRef)
+{
+    /* Get userdata */
+    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_WIN);
+
+    if (NULL != win) {
+        TJS_LOG_OBJ(win);
+
+        if (NULL != win->ref) {
+            NSString *role = tjs_attr_get_string(win->ref, attrRef);
+
+            if (NULL != role) {
+                duk_push_boolean(ctx,
+                    (YES == [role isEqualToString: (NSString *)roleRef] ? 1 : 0));
+
+                return 1;
+            }
+        }
+    }
+
+    return 0;
+}
+
 static duk_ret_t tjs_win_has_attr(duk_context *ctx, CFStringRef attrRef) {
     /* Get userdata */
     TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
@@ -47,7 +72,7 @@ static duk_ret_t tjs_win_has_attr(duk_context *ctx, CFStringRef attrRef) {
         NSNumber *number = tjs_attr_get_number(win->ref, attrRef);
         Boolean isHidden = [number boolValue];
 
-        duk_push_boolean(ctx, (YES == isHidden));
+        duk_push_boolean(ctx, (YES == isHidden ? 1 : 0));
 
         return 1;
     }
@@ -178,7 +203,7 @@ static duk_ret_t tjs_win_prototype_isminimized(duk_context *ctx) {
  **/
 
 static duk_ret_t tjs_win_prototype_isnormalwindow(duk_context *ctx) {
-    return 0;
+    return tjs_win_has_role(ctx, kAXSubroleAttribute, kAXStandardWindowSubrole);
 }
 
 /**
@@ -188,6 +213,79 @@ static duk_ret_t tjs_win_prototype_isnormalwindow(duk_context *ctx) {
  **/
 
 static duk_ret_t tjs_win_prototype_issheet(duk_context *ctx) {
+    return tjs_win_has_role(ctx, kAXRoleAttribute, kAXSheetRole);
+}
+
+/**
+ * Native win minimize prototype method
+ *
+ * @param[inout]  ctx  A #duk_context
+ **/
+
+static duk_ret_t tjs_win_prototype_minimize(duk_context *ctx) {
+    /* Get userdata */
+    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_WIN);
+
+    if (NULL != win) {
+        TJS_LOG_OBJ(win);
+
+        tjs_attr_set_value(win->ref,
+            (CFStringRef)NSAccessibilityMinimizedAttribute, kCFBooleanTrue);
+    }
+
+    return 0;
+}
+
+/**
+ * Native win unminimize prototype method
+ *
+ * @param[inout]  ctx  A #duk_context
+ **/
+
+static duk_ret_t tjs_win_prototype_unminimize(duk_context *ctx) {
+    /* Get userdata */
+    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_WIN);
+
+    if (NULL != win) {
+        TJS_LOG_OBJ(win);
+
+        tjs_attr_set_value(win->ref,
+            (CFStringRef)NSAccessibilityMinimizedAttribute, kCFBooleanFalse);
+    }
+
+    return 0;
+}
+
+/**
+ * Native win focus prototype method
+ *
+ * @param[inout]  ctx  A #duk_context
+ **/
+
+static duk_ret_t tjs_win_prototype_focus(duk_context *ctx) {
+    /* Get userdata */
+    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_WIN);
+
+    if (NULL != win) {
+        TJS_LOG_OBJ(win);
+
+        if (NULL != win->ref) {
+            NSRunningApplication *app = [NSRunningApplication
+                runningApplicationWithProcessIdentifier: tjs_win_get_pid(win)];
+
+            BOOL success = [app activateWithOptions:
+                NSApplicationActivateAllWindows|NSApplicationActivateIgnoringOtherApps];
+
+            if (!success) {
+                tjs_attr_set_value(win->ref,
+                    (CFStringRef)NSAccessibilityMainAttribute, kCFBooleanTrue);
+            }
+        }
+    }
+
     return 0;
 }
 
@@ -255,8 +353,8 @@ static duk_ret_t tjs_win_prototype_setxy(duk_context *ctx) {
 
             TJS_LOG_DUK("x=%f, y=%f", point.x, point.y);
 
-            tjs_attr_set(win->ref, kAXValueCGPointType,
-                kAXPositionAttribute, (void *)&point);
+            tjs_attr_set_typed_value(win->ref, kAXPositionAttribute,
+                kAXValueCGPointType, (void *)&point);
         }
     }
 
@@ -285,8 +383,8 @@ static duk_ret_t tjs_win_prototype_setwh(duk_context *ctx) {
 
             TJS_LOG_DEBUG("w=%f, h=%f", size.width, size.height);
 
-            tjs_attr_set(win->ref, kAXValueCGSizeType,
-                kAXSizeAttribute, (void *)&size);
+            tjs_attr_set_typed_value(win->ref, kAXSizeAttribute,
+                kAXValueCGSizeType, (void *)&size);
         }
     }
 
@@ -356,10 +454,10 @@ static duk_ret_t tjs_win_prototype_setframe(duk_context *ctx) {
             size.width = frame.width;
             size.height = frame.height;
 
-            tjs_attr_set(win->ref, kAXValueCGPointType,
-                kAXPositionAttribute, (void *)&point);
-            tjs_attr_set(win->ref, kAXValueCGSizeType,
-                kAXSizeAttribute, (void *)&size);
+            tjs_attr_set_typed_value(win->ref, kAXPositionAttribute,
+                kAXValueCGPointType, (void *)&point);
+            tjs_attr_set_typed_value(win->ref, kAXSizeAttribute,
+                kAXValueCGSizeType, (void *)&size);
 
             return 0;
         }
@@ -530,6 +628,12 @@ void tjs_win_init(duk_context *ctx) {
     duk_put_prop_string(ctx, -2, "isSheet");
 
     /* Actions */
+    duk_push_c_function(ctx, tjs_win_prototype_focus, 0);
+    duk_put_prop_string(ctx, -2, "focus");
+    duk_push_c_function(ctx, tjs_win_prototype_minimize, 0);
+    duk_put_prop_string(ctx, -2, "minimize");
+    duk_push_c_function(ctx, tjs_win_prototype_unminimize, 0);
+    duk_put_prop_string(ctx, -2, "unminimize");
     duk_push_c_function(ctx, tjs_win_prototype_show, 0);
     duk_put_prop_string(ctx, -2, "show");
     duk_push_c_function(ctx, tjs_win_prototype_hide, 0);
