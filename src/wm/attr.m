@@ -12,13 +12,18 @@
 #import "../touchjs.h"
 #import "attr.h"
 
-bool tjs_attr_set(AXUIElementRef ref, AXValueType typeRef,
-        CFStringRef attrRef, void *value)
+bool tjs_attr_set_value(AXUIElementRef ref, CFStringRef attrRef, CFTypeRef value)
+{
+    return (kAXErrorSuccess == AXUIElementSetAttributeValue(ref,
+        attrRef, value));
+}
+
+bool tjs_attr_set_typed_value(AXUIElementRef ref, CFStringRef attrRef,
+        AXValueType typeRef, void *value)
 {
     AXValueRef valueRef = AXValueCreate(typeRef, value);
 
-    return (kAXErrorSuccess == AXUIElementSetAttributeValue(ref,
-        attrRef, valueRef));
+    return tjs_attr_set_value(ref, attrRef, valueRef);
 }
 
 NSString *tjs_attr_get_string(AXUIElementRef ref, CFStringRef attrRef) {
