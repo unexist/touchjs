@@ -69,17 +69,18 @@ static duk_ret_t tjs_wm_prototype_getwindows(duk_context *ctx) {
         int nwins = 0;
 
         /* Find running applications */
-        for (NSRunningApplication *runningApplication in [[NSWorkspace sharedWorkspace] runningApplications]) {
-            AXUIElementRef applicationRef = AXUIElementCreateApplication(
-                [runningApplication processIdentifier]);
-            CFArrayRef applicationWindows;
-            AXUIElementCopyAttributeValues(applicationRef, kAXWindowsAttribute,
-                0, 100, &applicationWindows);
+        for (NSRunningApplication *app in [[NSWorkspace sharedWorkspace] runningApplications]) {
+            AXUIElementRef appRef = AXUIElementCreateApplication(
+                [app processIdentifier]);
 
-            if (!applicationWindows) continue;
+            CFArrayRef appWins;
+            AXUIElementCopyAttributeValues(appRef, kAXWindowsAttribute,
+                0, 100, &appWins);
+
+            if (!appWins) continue;
 
             /* Find windows of application */
-            for (CFIndex i = 0; i < CFArrayGetCount(applicationWindows); ++i) {
+            for (CFIndex i = 0; i < CFArrayGetCount(appWins); ++i) {
                 /* Create new TjsWin object and add it to array */
                 duk_get_global_string(ctx, "TjsWin");
                 duk_new(ctx, 0);
@@ -91,7 +92,7 @@ static duk_ret_t tjs_wm_prototype_getwindows(duk_context *ctx) {
                 TjsWin *win = (TjsWin *)tjs_userdata_from(ctx, TJS_FLAG_TYPE_WIN);
 
                 if (NULL != win) {
-                    win->ref = CFArrayGetValueAtIndex(applicationWindows, i);
+                    win->ref = CFArrayGetValueAtIndex(appWins, i);
                 }
             }
         }
