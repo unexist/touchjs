@@ -11,6 +11,10 @@
 
 #include "touchjs.h"
 
+#include "touchbar.h"
+
+#include "common/userdata.h"
+
 /**
  * Native print method
  *
@@ -80,7 +84,7 @@ static duk_ret_t tjs_global_attach(duk_context *ctx) {
     TjsUserdata *userdata = tjs_userdata_from(ctx, TJS_FLAGS_ATTACHABLE);
 
     if (NULL != userdata) {
-        tjs_attach(ctx, userdata, NULL);
+        tjs_touchbar_attach(ctx, userdata, NULL);
     }
 
     return 0;
@@ -101,7 +105,7 @@ static duk_ret_t tjs_global_detach(duk_context *ctx) {
     TjsUserdata *userdata = tjs_userdata_from(ctx, TJS_FLAGS_ATTACHABLE);
 
     if (NULL != userdata) {
-        tjs_detach(ctx, userdata);
+        tjs_touchbar_detach(ctx, userdata);
     }
 
     return 0;
@@ -137,6 +141,8 @@ void tjs_global_init(duk_context *ctx) {
 
     duk_push_c_function(ctx, tjs_global_attach, 1);
     duk_put_global_string(ctx, "tjs_attach");
+    duk_push_c_function(ctx, tjs_global_detach, 1);
+    duk_put_global_string(ctx, "tjs_detach");
 
     duk_push_c_function(ctx, tjs_global_detach, 1);
     duk_put_global_string(ctx, "tjs_rgb");

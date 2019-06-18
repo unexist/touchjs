@@ -9,8 +9,11 @@
  * See the file COPYING for details.
  **/
 
-#import "touchjs.h"
 #import <Cocoa/Cocoa.h>
+
+#include "touchjs.h"
+#include "common/userdata.h"
+#include "common/value.h"
 
 /* Types */
 typedef struct tjs_command_t {
@@ -47,7 +50,7 @@ static duk_ret_t tjs_command_ctor(duk_context *ctx) {
     command->line = strdup((char *)duk_require_string(ctx, -1));
     duk_pop(ctx);
 
-    tjs_super_init(ctx, (TjsUserdata *)command);
+    tjs_userdata_init(ctx, (TjsUserdata *)command);
 
     TJS_LOG_OBJ(command);
 
