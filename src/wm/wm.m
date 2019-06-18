@@ -9,16 +9,32 @@
  * See the file COPYING for details.
  **/
 
-#import "../touchjs.h"
-#import "screen.h"
-#import "win.h"
-#import "attr.h"
+#include "../touchjs.h"
+
+#include "screen.h"
+#include "win.h"
+#include "attr.h"
+
+#include "../common/userdata.h"
 
 /* Types */
+typedef void (*TjsNotificationHandler)(TjsWin *win);
+
+typedef struct tjs_observation_t {
+    int flags;
+
+    /* Obj-c */
+    NSString *notification;
+    TjsNotificationHandler handler;
+} TjsObservation;
+
 typedef struct tjs_wm_t {
     int flags;
 
     /* Obj-c */
+    AXObserverRef observerRef;
+
+    NSMutableArray *observations;
 } TjsWM;
 
 /**
@@ -44,7 +60,7 @@ static duk_ret_t tjs_wm_ctor(duk_context *ctx) {
     /* Get arguments */
     duk_pop(ctx);
 
-    tjs_super_init(ctx, (TjsUserdata *)wm);
+    tjs_userdata_init(ctx, (TjsUserdata *)wm);
 
     TJS_LOG_OBJ(wm);
 
@@ -92,7 +108,7 @@ static duk_ret_t tjs_wm_prototype_getwindows(duk_context *ctx) {
                 TjsWin *win = (TjsWin *)tjs_userdata_from(ctx, TJS_FLAG_TYPE_WIN);
 
                 if (NULL != win) {
-                    win->ref = CFArrayGetValueAtIndex(appWins, i);
+                    win->elemRef = CFArrayGetValueAtIndex(appWins, i);
                 }
             }
         }
@@ -150,8 +166,114 @@ static duk_ret_t tjs_wm_prototype_getscreens(duk_context *ctx) {
     return 0;
 }
 
+static void tjs_wm_observer_callback(AXObserverRef observerRef,
+        AXUIElementRef elemRef, CFStringRef notificationRef, void *handler)
+{
+    TjsWin *win = tjs_win_new(elemRef);
+
+    ((TjsNotificationHandler)handler)(win);
+
+    free(win);
+}
+
+static void tjs_wm_observer_create(TjsWM *wm) {
+    pid_t pid = [[NSRunningApplication currentApplication] processIdentifier];
+
+    AXError result = AXObserverCreate(pid, &tjs_wm_observer_callback,
+        &(wm->observerRef));
+
+    if (kAXErrorSuccess == result) {
+        CFRunLoopAddSource(CFRunLoopGetCurrent(),
+            AXObserverGetRunLoopSource(wm->observerRef), kCFRunLoopDefaultMode);
+
+        wm->observations = [NSMutableArray arrayWithCapacity: 0];
+    }
+}
+
+static void tjs_wm_observer_add(TjsWM *wm, AXUIElementRef elemRef,
+    CFStringRef notificationRef, void *handler)
+{
+    AXError result = AXObserverAddNotification(wm->observerRef, elemRef,
+        notificationRef, handler);
+
+    if (kAXErrorSuccess == result) {
+        TjsObservation *obs = (TjsObservation *)calloc(1, sizeof(TjsObservation));
+
+        obs->notification = (NSString *)notificationRef;
+        obs->handler = handler;
+
+        [wm->observations addObject: [NSValue value: &obs
+            withObjCType: @encode(TjsObservation *)]];
+    }
+}
+
 /**
- * Native label getValue prototype method
+ * Native wm observe prototype method
+ *
+ * @param[inout]  ctx  A #duk_context
+ **/
+
+static duk_ret_t tjs_wm_prototype_observe(duk_context *ctx) {
+    /* Get userdata */
+    TjsWM *wm = (TjsWM *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_WM);
+
+    if (NULL != wm) {
+        TJS_LOG_OBJ(wm);
+
+        if (NULL == wm->observerRef) {
+            tjs_wm_observer_create(wm);
+        }
+    }
+
+    return 0;
+}
+
+/**
+ * Native wm unobserve prototype method
+ *
+ * @param[inout]  ctx  A #duk_context
+ **/
+
+static duk_ret_t tjs_wm_prototype_unobserve(duk_context *ctx) {
+    /* Get userdata */
+    TjsWM *wm = (TjsWM *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_WM);
+
+    if (NULL != wm) {
+        TJS_LOG_OBJ(wm);
+    }
+
+    return 0;
+}
+
+/**
+ * Native wm isTrusted prototype method
+ *
+ * @param[inout]  ctx  A #duk_context
+ **/
+
+static duk_ret_t tjs_wm_prototype_istrusted(duk_context *ctx) {
+    /* Get userdata */
+    TjsWM *wm = (TjsWM *)tjs_userdata_get(ctx,
+        TJS_FLAG_TYPE_WM);
+
+    if (NULL != wm) {
+        TJS_LOG_OBJ(wm);
+
+        NSDictionary *options = @{(id)kAXTrustedCheckOptionPrompt: @YES};
+
+        duk_push_boolean(ctx,
+            (YES == AXIsProcessTrustedWithOptions((CFDictionaryRef)options) ? 1 : 0));
+
+        return 1;
+    }
+
+    return 0;
+}
+
+/**
+ * Native wm toString prototype method
  *
  * @param[inout]  ctx  A #duk_context
  **/
@@ -184,10 +306,19 @@ void tjs_wm_init(duk_context *ctx) {
     duk_push_object(ctx);
 
     /* Register methods */
-    duk_push_c_function(ctx, tjs_wm_prototype_getwindows, 1);
+    duk_push_c_function(ctx, tjs_wm_prototype_getwindows, 0);
     duk_put_prop_string(ctx, -2, "getWindows");
-    duk_push_c_function(ctx, tjs_wm_prototype_getscreens, 1);
+    duk_push_c_function(ctx, tjs_wm_prototype_getscreens, 0);
     duk_put_prop_string(ctx, -2, "getScreens");
+
+    duk_push_c_function(ctx, tjs_wm_prototype_observe, 2);
+    duk_put_prop_string(ctx, -2, "observe");
+    duk_push_c_function(ctx, tjs_wm_prototype_unobserve, 1);
+    duk_put_prop_string(ctx, -2, "unobserve");
+
+    duk_push_c_function(ctx, tjs_wm_prototype_istrusted, 0);
+    duk_put_prop_string(ctx, -2, "isTrusted");
+
     duk_push_c_function(ctx, tjs_wm_prototype_tostring, 0);
     duk_put_prop_string(ctx, -2, "toString");
 
