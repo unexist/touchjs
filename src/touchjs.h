@@ -17,11 +17,6 @@
 
 #include "libs/duktape/duktape.h"
 
-/* Symbols */
-#define TJS_SYM_CLICK_CB "\xff" "__click_cb"
-#define TJS_SYM_SLIDE_CB "\xff" "__slide_cb"
-#define TJS_SYM_USERDATA "\xff" "__userdata"
-
 /* Package */
 #define PKG_NAME "TouchJS"
 #define PKG_VERSION "0.0"
@@ -77,50 +72,35 @@
     tjs_log(TJS_LOGLEVEL_DEBUG, __FUNCTION__, __LINE__, "obj=%p, flags=%d", OBJ, OBJ->flags);
 
 /* Types */
-typedef struct tjs_color_t {
-    unsigned char red;
-    unsigned char green;
-    unsigned char blue;
-} TjsColor;
-
-typedef union tjs_value_t {
-    char *asChar;
-    int asInt;
-    double asDouble;
-} TjsValue;
-
-typedef struct tjs_userdata_t {
+typedef struct tjs_touch_t {
     int flags;
-} TjsUserdata;
+    int loglevel;
 
-typedef struct tjs_scrubber_t {
-    int flags;
-} TjsScrubber;
+    duk_context *ctx;
+} TjsTouch;
 
-typedef struct tjs_widget_t {
-    int flags;
-
-    struct{
-        struct tjs_color_t fg;
-        struct tjs_color_t bg;
-    } colors;
-
-    union tjs_value_t value;
-} TjsWidget;
+/* Globals */
+TjsTouch touch;
 
 /* touchjs.m */
 void tjs_log(int level, const char *func, int line, const char *fmt, ...);
 void tjs_fatal(void *userdata, const char *msg);
 void tjs_dump_stack(const char *func, int line, duk_context *ctx);
 void tjs_exit(void);
-void tjs_attach(duk_context *ctx, TjsUserdata *userdata, TjsUserdata *parent);
-void tjs_detach(duk_context *ctx, TjsUserdata *userdata);
 
-/* Update.m */
-void tjs_update(TjsUserdata *userdata);
+/******************************
+ *          Objects           *
+ ******************************/
+
+/* global.c */
+void tjs_global_init(duk_context *ctx);
 
 /* command.m */
 void tjs_command_init(duk_context *ctx);
+
+/******************************
+ *             WM             *
+ ******************************/
 
 /* wm.m */
 void tjs_wm_init(duk_context *ctx);
@@ -131,34 +111,20 @@ void tjs_screen_init(duk_context *ctx);
 /* win.m */
 void tjs_win_init(duk_context *ctx);
 
-/* global.c */
-void tjs_global_init(duk_context *ctx);
-
-/* userdata.c */
-TjsUserdata *tjs_userdata_new(duk_context *ctx, int flags, size_t datasize);
-TjsUserdata *tjs_userdata_get(duk_context *ctx, int flag);
-TjsUserdata *tjs_userdata_from(duk_context *ctx, int flag);
-void tjs_userdata_free(TjsUserdata *userdata);
-
-/* super.c */
-void tjs_super_update(TjsUserdata *userdata);
-void tjs_super_callback_call(duk_context *ctx, const char *sym, int nargs);
-
-duk_ret_t tjs_super_prototype_setfgcolor(duk_context *ctx);
-duk_ret_t tjs_super_prototype_setbgcolor(duk_context *ctx);
-
-void tjs_super_init(duk_context *ctx, TjsUserdata *userdata);
-
-/* scrubber.m */
-void tjs_scrubber_init(duk_context *ctx);
-
-/* label.c */
-void tjs_label_init(duk_context *ctx);
+/******************************
+ *          Widgets           *
+ ******************************/
 
 /* button.c */
 void tjs_button_init(duk_context *ctx);
 
+/* label.c */
+void tjs_label_init(duk_context *ctx);
+
 /* slider.m */
 void tjs_slider_init(duk_context *ctx);
+
+/* scrubber.m */
+void tjs_scrubber_init(duk_context *ctx);
 
 #endif /* TJS_TOUCHJS_H */
