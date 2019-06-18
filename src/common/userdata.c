@@ -9,7 +9,28 @@
  * See the file COPYING for details.
  **/
 
-#include "touchjs.h"
+#include "../touchjs.h"
+#include "userdata.h"
+
+/**
+ * Native userdata destructor
+ *
+ * @param[inout]  ctx  A #duk_context
+ **/
+
+static duk_ret_t tjs_userdata_dtor(duk_context *ctx) {
+    /* Get userdata */
+    TjsUserdata *userdata = tjs_userdata_get(ctx,
+        TJS_FLAGS_WIDGETS);
+
+    if (NULL != userdata) {
+        TJS_LOG_OBJ(userdata);
+
+        tjs_userdata_free(userdata);
+    }
+
+    return 0;
+}
 
 /**
  * Create new userdata
@@ -75,6 +96,24 @@ TjsUserdata *tjs_userdata_from(duk_context *ctx, int flag) {
     return (0 < (userdata->flags & flag) ? userdata : NULL);
 }
 
+/**
+ * Native userdata init
+ *
+ * @param[inout]  ctx      A #duk_context
+ * @param[inout]  control  A #TjsUserdata
+ **/
+
+void tjs_userdata_init(duk_context *ctx, TjsUserdata *userdata) {
+    /* Register destructor */
+    duk_push_this(ctx);
+    duk_push_c_function(ctx, tjs_userdata_dtor, 0);
+    duk_set_finalizer(ctx, -2);
+    duk_pop(ctx);
+
+    if (NULL != userdata) {
+        TJS_LOG_OBJ(userdata);
+    }
+}
 
 /**
  * Free userdata
