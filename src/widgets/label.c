@@ -11,6 +11,10 @@
 
 #include "../touchjs.h"
 
+#include "widget.h"
+
+#include "../common/userdata.h"
+
 /**
  * Native constructor
  *
@@ -35,7 +39,7 @@ static duk_ret_t tjs_label_ctor(duk_context *ctx) {
     widget->value.asChar = strdup((char *)duk_require_string(ctx, -1));
     duk_pop(ctx);
 
-    tjs_super_init(ctx, (TjsUserdata *)widget);
+    tjs_userdata_init(ctx, (TjsUserdata *)widget);
 
     TJS_LOG_OBJ(widget);
 
@@ -106,7 +110,7 @@ void tjs_label_init(duk_context *ctx) {
     duk_push_c_function(ctx, tjs_label_prototype_tostring, 0);
     duk_put_prop_string(ctx, -2, "toString");
 
-    duk_push_c_function(ctx, tjs_super_prototype_setfgcolor, 3);
+    duk_push_c_function(ctx, tjs_widget_prototype_setfgcolor, 3);
     duk_put_prop_string(ctx, -2, "setFgColor");
 
     duk_put_prop_string(ctx, -2, "prototype");

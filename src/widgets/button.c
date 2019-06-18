@@ -10,6 +10,9 @@
  **/
 
 #include "../touchjs.h"
+#include "../common/userdata.h"
+#include "../common/callback.h"
+#include "widget.h"
 
  /**
  * Native constructor
@@ -35,7 +38,7 @@ static duk_ret_t tjs_button_ctor(duk_context *ctx) {
     widget->value.asChar = strdup((char *)duk_require_string(ctx, -1));
     duk_pop(ctx);
 
-    tjs_super_init(ctx, (TjsUserdata *)widget);
+    tjs_userdata_init(ctx, (TjsUserdata *)widget);
 
     TJS_LOG_DEBUG("flags=%d", widget->flags);
 
@@ -88,7 +91,7 @@ static duk_ret_t tjs_button_prototype_click(duk_context *ctx) {
 
         /* Call click callback */
         duk_push_this(ctx);
-        tjs_super_callback_call(ctx, TJS_SYM_CLICK_CB, 0);
+        tjs_callback_call(ctx, TJS_SYM_CLICK_CB, 0);
   }
 
     /* Allow fluid.. */
@@ -167,7 +170,7 @@ void tjs_button_init(duk_context *ctx) {
     duk_push_c_function(ctx, tjs_button_prototype_tostring, 0);
     duk_put_prop_string(ctx, -2, "toString");
 
-    duk_push_c_function(ctx, tjs_super_prototype_setbgcolor, 3);
+    duk_push_c_function(ctx, tjs_widget_prototype_setbgcolor, 3);
     duk_put_prop_string(ctx, -2, "setBgColor");
 
     duk_put_prop_string(ctx, -2, "prototype");

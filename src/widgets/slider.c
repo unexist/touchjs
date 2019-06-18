@@ -11,6 +11,11 @@
 
 #include "../touchjs.h"
 
+#include "widget.h"
+
+#include "../common/callback.h"
+#include "../common/userdata.h"
+
 /**
  * Native constructor
  *
@@ -35,7 +40,7 @@ static duk_ret_t tjs_slider_ctor(duk_context *ctx) {
     widget->value.asInt = duk_require_int(ctx, -1);
     duk_pop(ctx);
 
-    tjs_super_init(ctx, (TjsUserdata *)widget);
+    tjs_userdata_init(ctx, (TjsUserdata *)widget);
 
     TJS_LOG_DEBUG("flags=%d", widget->flags);
 
@@ -164,7 +169,7 @@ void tjs_slider_init(duk_context *ctx) {
     duk_push_c_function(ctx, tjs_slider_prototype_setpercent, 1);
     duk_put_prop_string(ctx, -2, "setPercent");
 
-    duk_push_c_function(ctx, tjs_super_prototype_setbgcolor, 3);
+    duk_push_c_function(ctx, tjs_widget_prototype_setbgcolor, 3);
     duk_put_prop_string(ctx, -2, "setBgColor");
 
     duk_push_c_function(ctx, tjs_slider_prototype_tostring, 0);
