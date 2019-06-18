@@ -22,7 +22,10 @@ typedef struct tjs_win_t {
     TjsFrame frame;
 
     /* Obj-c */
-    AXUIElementRef ref;
+    AXUIElementRef elemRef;
 } TjsWin;
+
+/* Methods */
+TjsWin *tjs_win_new(AXUIElementRef elemRef);
 
 #endif /* TJS_WIN_H */

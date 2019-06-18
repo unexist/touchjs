@@ -9,15 +9,36 @@
  * See the file COPYING for details.
  **/
 
-#import "../touchjs.h"
-#import "win.h"
-#import "attr.h"
+#include "../touchjs.h"
+
+#include "win.h"
+#include "attr.h"
+
+#include "../common/userdata.h"
 
 /* Flags */
 #define TJS_WIN_SIGNAL_SHOW      (1 << 0)
 #define TJS_WIN_SIGNAL_HIDE      (1 << 1)
 #define TJS_WIN_SIGNAL_KILL      (1 << 2)
 #define TJS_WIN_SIGNAL_TERMINATE (1 << 3)
+
+/**
+ * Create new #TjsWin instance
+ *
+ * @param  elemRef  A #AXUIElementRef
+ *
+ * @return A newly created #TjsWin or otherwise NULL
+ **/
+
+TjsWin *tjs_win_new(AXUIElementRef elemRef) {
+    TjsWin *win = (TjsWin *)calloc(1, sizeof(TjsWin));
+
+    if (NULL != win) {
+        win->elemRef = elemRef;
+    }
+
+    return win;
+}
 
 static duk_ret_t tjs_win_is_settable(duk_context *ctx, CFStringRef attrRef) {
     /* Get userdata */
@@ -28,7 +49,7 @@ static duk_ret_t tjs_win_is_settable(duk_context *ctx, CFStringRef attrRef) {
         TJS_LOG_OBJ(win);
 
         duk_push_boolean(ctx,
-            (tjs_attr_is_settable(win->ref, attrRef) ? 1 : 0));
+            (tjs_attr_is_settable(win->elemRef, attrRef) ? 1 : 0));
 
         return 1;
     }
@@ -46,8 +67,8 @@ static duk_ret_t tjs_win_has_role(duk_context *ctx, CFStringRef attrRef,
     if (NULL != win) {
         TJS_LOG_OBJ(win);
 
-        if (NULL != win->ref) {
-            NSString *role = tjs_attr_get_string(win->ref, attrRef);
+        if (NULL != win->elemRef) {
+            NSString *role = tjs_attr_get_string(win->elemRef, attrRef);
 
             if (NULL != role) {
                 duk_push_boolean(ctx,
@@ -69,7 +90,7 @@ static duk_ret_t tjs_win_has_attr(duk_context *ctx, CFStringRef attrRef) {
     if (NULL != win) {
         TJS_LOG_OBJ(win);
 
-        NSNumber *number = tjs_attr_get_number(win->ref, attrRef);
+        NSNumber *number = tjs_attr_get_number(win->elemRef, attrRef);
         Boolean isHidden = [number boolValue];
 
         duk_push_boolean(ctx, (YES == isHidden ? 1 : 0));
@@ -83,7 +104,7 @@ static duk_ret_t tjs_win_has_attr(duk_context *ctx, CFStringRef attrRef) {
 static pid_t tjs_win_get_pid(TjsWin *win) {
     pid_t pid = -1;
 
-    AXError result= AXUIElementGetPid(win->ref, &pid);
+    AXError result = AXUIElementGetPid(win->elemRef, &pid);
 
     if (kAXErrorSuccess != result) {
         pid = -1;
@@ -149,7 +170,7 @@ static duk_ret_t tjs_win_ctor(duk_context *ctx) {
     /* Get arguments */
     duk_pop(ctx);
 
-    tjs_super_init(ctx, (TjsUserdata *)win);
+    tjs_userdata_init(ctx, (TjsUserdata *)win);
 
     TJS_LOG_OBJ(win);
 
@@ -230,7 +251,7 @@ static duk_ret_t tjs_win_prototype_minimize(duk_context *ctx) {
     if (NULL != win) {
         TJS_LOG_OBJ(win);
 
-        tjs_attr_set_value(win->ref,
+        tjs_attr_set_value(win->elemRef,
             (CFStringRef)NSAccessibilityMinimizedAttribute, kCFBooleanTrue);
     }
 
@@ -251,7 +272,7 @@ static duk_ret_t tjs_win_prototype_unminimize(duk_context *ctx) {
     if (NULL != win) {
         TJS_LOG_OBJ(win);
 
-        tjs_attr_set_value(win->ref,
+        tjs_attr_set_value(win->elemRef,
             (CFStringRef)NSAccessibilityMinimizedAttribute, kCFBooleanFalse);
     }
 
@@ -272,7 +293,7 @@ static duk_ret_t tjs_win_prototype_focus(duk_context *ctx) {
     if (NULL != win) {
         TJS_LOG_OBJ(win);
 
-        if (NULL != win->ref) {
+        if (NULL != win->elemRef) {
             NSRunningApplication *app = [NSRunningApplication
                 runningApplicationWithProcessIdentifier: tjs_win_get_pid(win)];
 
@@ -280,7 +301,7 @@ static duk_ret_t tjs_win_prototype_focus(duk_context *ctx) {
                 NSApplicationActivateAllWindows|NSApplicationActivateIgnoringOtherApps];
 
             if (!success) {
-                tjs_attr_set_value(win->ref,
+                tjs_attr_set_value(win->elemRef,
                     (CFStringRef)NSAccessibilityMainAttribute, kCFBooleanTrue);
             }
         }
@@ -343,7 +364,7 @@ static duk_ret_t tjs_win_prototype_setxy(duk_context *ctx) {
     if (NULL != win) {
         TJS_LOG_OBJ(win);
 
-        if (NULL != win->ref) {
+        if (NULL != win->elemRef) {
             TJS_DSTACK(ctx);
 
             CGPoint point = {
@@ -353,7 +374,7 @@ static duk_ret_t tjs_win_prototype_setxy(duk_context *ctx) {
 
             TJS_LOG_DUK("x=%f, y=%f", point.x, point.y);
 
-            tjs_attr_set_typed_value(win->ref, kAXPositionAttribute,
+            tjs_attr_set_typed_value(win->elemRef, kAXPositionAttribute,
                 kAXValueCGPointType, (void *)&point);
         }
     }
@@ -375,7 +396,7 @@ static duk_ret_t tjs_win_prototype_setwh(duk_context *ctx) {
     if (NULL != win) {
         TJS_LOG_OBJ(win);
 
-        if (NULL != win->ref) {
+        if (NULL != win->elemRef) {
             CGSize size = {
                 .width = duk_require_int(ctx, -1),
                 .height = duk_require_int(ctx, -2)
@@ -383,7 +404,7 @@ static duk_ret_t tjs_win_prototype_setwh(duk_context *ctx) {
 
             TJS_LOG_DEBUG("w=%f, h=%f", size.width, size.height);
 
-            tjs_attr_set_typed_value(win->ref, kAXSizeAttribute,
+            tjs_attr_set_typed_value(win->elemRef, kAXSizeAttribute,
                 kAXValueCGSizeType, (void *)&size);
         }
     }
@@ -405,13 +426,13 @@ static duk_ret_t tjs_win_prototype_getframe(duk_context *ctx) {
     if (NULL != win) {
         TJS_LOG_OBJ(win);
 
-        if (NULL != win->ref) {
+        if (NULL != win->elemRef) {
             CGPoint point;
             CGSize size;
 
-            tjs_attr_get(win->ref, kAXValueCGPointType,
+            tjs_attr_get(win->elemRef, kAXValueCGPointType,
                 kAXPositionAttribute, (void *)&point);
-            tjs_attr_get(win->ref, kAXValueCGSizeType,
+            tjs_attr_get(win->elemRef, kAXValueCGSizeType,
                 kAXSizeAttribute, (void *)&size);
 
             win->frame.x      = point.x;
@@ -442,7 +463,7 @@ static duk_ret_t tjs_win_prototype_setframe(duk_context *ctx) {
     if (NULL != win) {
         TJS_LOG_OBJ(win);
 
-        if (NULL != win->ref) {
+        if (NULL != win->elemRef) {
             TjsFrame frame;
             CGPoint point;
             CGSize size;
@@ -454,9 +475,9 @@ static duk_ret_t tjs_win_prototype_setframe(duk_context *ctx) {
             size.width = frame.width;
             size.height = frame.height;
 
-            tjs_attr_set_typed_value(win->ref, kAXPositionAttribute,
+            tjs_attr_set_typed_value(win->elemRef, kAXPositionAttribute,
                 kAXValueCGPointType, (void *)&point);
-            tjs_attr_set_typed_value(win->ref, kAXSizeAttribute,
+            tjs_attr_set_typed_value(win->elemRef, kAXSizeAttribute,
                 kAXValueCGSizeType, (void *)&size);
 
             return 0;
@@ -480,8 +501,8 @@ static duk_ret_t tjs_win_prototype_gettitle(duk_context *ctx) {
     if (NULL != win) {
         TJS_LOG_OBJ(win);
 
-        if (NULL != win->ref) {
-            NSString *title = tjs_attr_get_string(win->ref, kAXTitleAttribute);
+        if (NULL != win->elemRef) {
+            NSString *title = tjs_attr_get_string(win->elemRef, kAXTitleAttribute);
 
             if (NULL != title) {
                 duk_push_string(ctx, [title UTF8String]);
@@ -508,8 +529,8 @@ static duk_ret_t tjs_win_prototype_getrole(duk_context *ctx) {
     if (NULL != win) {
         TJS_LOG_OBJ(win);
 
-        if (NULL != win->ref) {
-            NSString *role = tjs_attr_get_string(win->ref, kAXRoleAttribute);
+        if (NULL != win->elemRef) {
+            NSString *role = tjs_attr_get_string(win->elemRef, kAXRoleAttribute);
 
             if (NULL != role) {
                 duk_push_string(ctx, [role UTF8String]);
@@ -536,8 +557,8 @@ static duk_ret_t tjs_win_prototype_getsubrole(duk_context *ctx) {
     if (NULL != win) {
         TJS_LOG_OBJ(win);
 
-        if (NULL != win->ref) {
-            NSString *subrole = tjs_attr_get_string(win->ref, kAXSubroleAttribute);
+        if (NULL != win->elemRef) {
+            NSString *subrole = tjs_attr_get_string(win->elemRef, kAXSubroleAttribute);
 
             if (NULL != subrole) {
                 duk_push_string(ctx, [subrole UTF8String]);
@@ -564,7 +585,7 @@ static duk_ret_t tjs_win_prototype_getpid(duk_context *ctx) {
     if (NULL != win) {
         TJS_LOG_OBJ(win);
 
-        if (NULL != win->ref) {
+        if (NULL != win->elemRef) {
             pid_t pid = tjs_win_get_pid(win);
 
             duk_push_int(ctx, (int)pid);

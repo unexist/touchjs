@@ -9,8 +9,11 @@
  * See the file COPYING for details.
  **/
 
-#import "../touchjs.h"
-#import "screen.h"
+#include "../touchjs.h"
+
+#include "screen.h"
+
+#include "../common/userdata.h"
 
 /**
  * Native constructor
@@ -35,7 +38,7 @@ static duk_ret_t tjs_screen_ctor(duk_context *ctx) {
     /* Get arguments */
     duk_pop(ctx);
 
-    tjs_super_init(ctx, (TjsUserdata *)screen);
+    tjs_userdata_init(ctx, (TjsUserdata *)screen);
 
     TJS_LOG_OBJ(screen);
 
