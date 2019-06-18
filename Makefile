@@ -13,18 +13,25 @@ LDFLAGS=-fobjc-link-runtime -lm $(FRAMEWORKS)
 
 SRC_TOUCHJS= \
 	src/touchjs.m \
+	src/embed.m \
+	src/touchbar.m
+
+SRC_TJS_COMMON= \
+	src/common/userdata.c \
+	src/common/callback.c
+
+SRC_TJS_OBJ_GLOBAL= \
 	src/command.m \
-	src/global.c \
-	src/userdata.c
+	src/global.c
 
-SRC_TJS_CONTROLS= \
-	src/controls/super.c \
-	src/controls/scrubber.c \
-	src/controls/label.c \
-	src/controls/button.c \
-	src/controls/slider.c
+SRC_TJS_OBJ_WIDGETS= \
+	src/widgets/widget.c \
+	src/widgets/label.c \
+	src/widgets/button.c \
+	src/widgets/slider.c \
+	src/widgets/scrubber.c
 
-SRC_TJS_WM= \
+SRC_TJS_OBJ_WM= \
 	src/wm/wm.m \
 	src/wm/frame.m \
 	src/wm/attr.m \
@@ -35,8 +42,10 @@ SRC_LIB_DUKTAPE= \
 	src/libs/duktape/duktape.c
 
 SOURCES=$(SRC_TOUCHJS) \
-	$(SRC_TJS_CONTROLS) \
-	$(SRC_TJS_WM) \
+	$(SRC_TJS_COMMON) \
+	$(SRC_TJS_OBJ_GLOBAL) \
+	$(SRC_TJS_OBJ_WIDGETS) \
+	$(SRC_TJS_OBJ_WM) \
 	$(SRC_LIB_DUKTAPE)
 
 TEMP=$(SOURCES:.m=.o)
@@ -44,6 +53,7 @@ OBJECTS=$(TEMP:.c=.o)
 
 OUT=touchjs
 BUNDLE=touchjs.app
+BUILDDIR=build
 
 all: $(SOURCES) $(OUT)
 	@mkdir -p "$(BUNDLE)/Contents/MacOS"
