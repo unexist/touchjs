@@ -1,6 +1,8 @@
 /* WM */
 var wm = new TjsWM();
 
+tjs_print("wm: trusted=" + wm.isTrusted());
+
 /* Screens */
 var screens = wm.getScreens();
 
