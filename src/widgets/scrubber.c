@@ -11,6 +11,11 @@
 
 #include "../touchjs.h"
 
+#include "../touchbar.h"
+#include "widget.h"
+
+#include "../common/userdata.h"
+
 /**
  * Native constructor
  *
@@ -24,17 +29,17 @@ static duk_ret_t tjs_scrubber_ctor(duk_context *ctx) {
     }
 
     /* Create new userdata */
-    TjsScrubber *scrubber = (TjsScrubber *)tjs_userdata_new(ctx,
-        TJS_FLAG_TYPE_SCRUBBER, sizeof(TjsScrubber));
+    TjsWidget *widget = (TjsWidget *)tjs_userdata_new(ctx,
+        TJS_FLAG_TYPE_SCRUBBER, sizeof(TjsWidget));
 
-    if (NULL == scrubber) {
+    if (NULL == widget) {
         return DUK_RET_TYPE_ERROR;
     }
 
     /* Get arguments */
-    tjs_super_init(ctx, (TjsUserdata *)scrubber);
+    tjs_userdata_init(ctx, (TjsUserdata *)widget);
 
-    TJS_LOG_OBJ(scrubber);
+    TJS_LOG_OBJ(widget);
 
     return 0;
 }
@@ -52,13 +57,13 @@ static duk_ret_t tjs_scrubber_prototype_attach(duk_context *ctx) {
 
     /* Get userdata */
     TjsUserdata *userdata = tjs_userdata_from(ctx, TJS_FLAGS_WIDGETS);
-    TjsScrubber *scrubber = (TjsScrubber *)tjs_userdata_get(ctx,
+    TjsWidget *widget = (TjsWidget *)tjs_userdata_get(ctx,
         TJS_FLAG_TYPE_SCRUBBER);
 
-    if (NULL != scrubber) {
-        TJS_LOG_OBJ(scrubber);
+    if (NULL != widget) {
+        TJS_LOG_OBJ(widget);
 
-        tjs_attach(ctx, userdata, (TjsUserdata *)scrubber);
+        tjs_touchbar_attach(ctx, userdata, (TjsUserdata *)widget);
     }
 
     /* Allow fluid.. */
@@ -80,13 +85,13 @@ static duk_ret_t tjs_scrubber_prototype_detach(duk_context *ctx) {
 
     /* Get userdata */
     TjsUserdata *userdata = tjs_userdata_from(ctx, TJS_FLAGS_WIDGETS);
-    TjsScrubber *scrubber = (TjsScrubber *)tjs_userdata_get(ctx,
+    TjsWidget *widget = (TjsWidget *)tjs_userdata_get(ctx,
         TJS_FLAG_TYPE_SCRUBBER);
 
-    if (NULL != scrubber) {
-        TJS_LOG_OBJ(scrubber);
+    if (NULL != widget) {
+        TJS_LOG_OBJ(widget);
 
-        tjs_detach(ctx, userdata);
+        tjs_touchbar_detach(ctx, userdata);
     }
 
     /* Allow fluid.. */
@@ -103,20 +108,19 @@ static duk_ret_t tjs_scrubber_prototype_detach(duk_context *ctx) {
 
 static duk_ret_t tjs_scrubber_prototype_tostring(duk_context *ctx) {
     /* Get userdata */
-    TjsScrubber *scrubber = (TjsScrubber *)tjs_userdata_get(ctx,
+    TjsWidget *widget = (TjsWidget *)tjs_userdata_get(ctx,
         TJS_FLAG_TYPE_SCRUBBER);
 
-    if (NULL != scrubber) {
-        TJS_LOG_DEBUG("flags=%d", scrubber->flags);
+    if (NULL != widget) {
+        TJS_LOG_DEBUG("flags=%d", widget->flags);
 
-        duk_push_sprintf(ctx, "flags=%d", scrubber->flags);
+        duk_push_sprintf(ctx, "flags=%d", widget->flags);
 
         return 1;
     }
 
     return 0;
 }
-
 
 /**
  * Init methods for #TjsScrubber
