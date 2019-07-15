@@ -56,6 +56,7 @@
 #define TJS_LOGLEVEL_DEBUG (1L << 1)
 #define TJS_LOGLEVEL_ERROR (1L << 2)
 #define TJS_LOGLEVEL_DUK (1L << 3)
+#define TJS_LOGLEVEL_OBSERVER (1L << 4)
 
 /* Macros */
 #define TJS_DSTACK(CTX) \
@@ -68,6 +69,8 @@
     tjs_log(TJS_LOGLEVEL_ERROR, __FUNCTION__, __LINE__, FMT, ##__VA_ARGS__);
 #define TJS_LOG_DUK(FMT, ...) \
     tjs_log(TJS_LOGLEVEL_DUK, __FUNCTION__, __LINE__, FMT, ##__VA_ARGS__);
+#define TJS_LOG_OBSERVER(FMT, ...) \
+    tjs_log(TJS_LOGLEVEL_OBSERVER, __FUNCTION__, __LINE__, FMT, ##__VA_ARGS__);
 #define TJS_LOG_OBJ(OBJ) \
     tjs_log(TJS_LOGLEVEL_DEBUG, __FUNCTION__, __LINE__, "obj=%p, flags=%d", OBJ, OBJ->flags);
 
