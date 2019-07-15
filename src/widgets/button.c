@@ -10,9 +10,11 @@
  **/
 
 #include "../touchjs.h"
+
+#include "widget.h"
+
 #include "../common/userdata.h"
 #include "../common/callback.h"
-#include "widget.h"
 
  /**
  * Native constructor
