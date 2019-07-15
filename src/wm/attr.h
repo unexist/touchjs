@@ -14,11 +14,13 @@
 
 #import <Cocoa/Cocoa.h>
 
-bool tjs_attr_set_value(AXUIElementRef ref, CFStringRef attrRef, CFTypeRef value);
-bool tjs_attr_set_typed_value(AXUIElementRef ref, CFStringRef attrRef, AXValueType typeRef, void *value);
-NSString *tjs_attr_get_string(AXUIElementRef ref, CFStringRef attrRef);
-NSNumber *tjs_attr_get_number(AXUIElementRef ref, CFStringRef attrRef);
-bool tjs_attr_get(AXUIElementRef ref, AXValueType typeRef, CFStringRef attrRef, void *value);
-bool tjs_attr_is_settable(AXUIElementRef ref, CFStringRef attrRef);
+bool tjs_attr_set_value(AXUIElementRef elemRref, CFStringRef attrRef, CFTypeRef value);
+bool tjs_attr_set_typed_value(AXUIElementRef elemRef, CFStringRef attrRef, AXValueType typeRef, void *value);
+NSString *tjs_attr_get_string(AXUIElementRef elemRef, CFStringRef attrRef);
+NSNumber *tjs_attr_get_number(AXUIElementRef elemRef, CFStringRef attrRef);
+pid_t tjs_attr_get_pid(AXUIElementRef elemRef);
+CGWindowID tjs_attr_get_win_id(AXUIElementRef elemRef);
+bool tjs_attr_get(AXUIElementRef elemRef, AXValueType typeRef, CFStringRef attrRef, void *value);
+bool tjs_attr_is_settable(AXUIElementRef elemRef, CFStringRef attrRef);
 
 #endif /* TJS_ATTR_H */
