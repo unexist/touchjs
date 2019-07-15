@@ -13,7 +13,8 @@
 #define TJS_WIN_H 1
 
 #import <Cocoa/Cocoa.h>
-#import "frame.h"
+
+#include "frame.h"
 
 /* Types */
 typedef struct tjs_win_t {
