@@ -33,6 +33,7 @@ SRC_TJS_OBJ_WIDGETS= \
 
 SRC_TJS_OBJ_WM= \
 	src/wm/wm.m \
+	src/wm/observer.m \
 	src/wm/frame.m \
 	src/wm/attr.m \
 	src/wm/screen.m \
