@@ -16,7 +16,8 @@ var wins = wm.getWindows();
 wins.filter(function (win) {
     return win.isNormalWindow();
 }).forEach(function (win) {
-    tjs_print("win: title=" + win.getTitle() +
+    tjs_print("win: id=" + win.getId() +
+        ", title=" + win.getTitle() +
         ", role=" + win.getRole() +
         ", subrole=" + win.getSubrole() +
         ", frame=" + win.getFrame() +
@@ -34,4 +35,13 @@ wins.filter(function (win) {
 
     if (win.isResizable())
         win.setWH(100, 100);*/
+});
+
+/* Observer */
+wm.getWindows().filter(function (win) {
+    return /chrome/i.test(win.getTitle());
+}).forEach(function (win) {
+    win.observe("win_move", function (win) {
+        tjs_print("Ooohhhh: " + win.getFrame());
+    });
 });
