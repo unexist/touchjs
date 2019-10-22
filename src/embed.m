@@ -55,9 +55,10 @@ TjsEmbed *tjs_embed_new(TjsUserdata *userdata, TjsUserdata *parent) {
 
 void tjs_embed_create(TjsEmbed *embed) {
     /* Sanity check */
-    if (0 < (embed->flags & TJS_FLAG_TYPE_EMBED) &&
-        0 == (embed->flags & TJS_FLAG_STATE_CREATED) &&
-        NULL != embed->userdata)
+    if (NULL != embed &&
+            0 < (embed->flags & TJS_FLAG_TYPE_EMBED) &&
+            0 == (embed->flags & TJS_FLAG_STATE_CREATED) &&
+            NULL != embed->userdata)
     {
         /* Get delegate as target */
         AppDelegate *delegate = (AppDelegate *)[[NSApplication sharedApplication] delegate];
@@ -95,7 +96,7 @@ void tjs_embed_create(TjsEmbed *embed) {
  **/
 
 void tjs_embed_update(TjsEmbed *embed) {
-    if (0 < (embed->flags & TJS_FLAG_TYPE_EMBED)) {
+    if (NULL != embed && 0 < (embed->flags & TJS_FLAG_TYPE_EMBED)) {
         tjs_embed_color(embed);
         tjs_embed_value(embed);
     }
@@ -109,7 +110,8 @@ void tjs_embed_update(TjsEmbed *embed) {
 
  void tjs_embed_configure(TjsEmbed *embed) {
     /* Sanity check */
-    if (0 < (embed->flags & TJS_FLAG_TYPE_EMBED) &&
+    if (NULL != embed &&
+        0 < (embed->flags & TJS_FLAG_TYPE_EMBED) &&
         0 == (embed->flags & TJS_FLAG_STATE_CONFIGURED) && NULL != embed->userdata)
     {
         /* Handle type */
@@ -169,7 +171,8 @@ void tjs_embed_update(TjsEmbed *embed) {
 
 void tjs_embed_color(TjsEmbed *embed) {
     /* Sanity checks */
-    if (0 < (embed->flags & TJS_FLAG_TYPE_EMBED) && NULL != embed->userdata &&
+    if (NULL != embed &&
+        0 < (embed->flags & TJS_FLAG_TYPE_EMBED) && NULL != embed->userdata &&
         0 < (embed->userdata->flags & TJS_FLAGS_COLORS))
     {
         TjsWidget *widget = (TjsWidget *)(embed->userdata);
@@ -218,7 +221,8 @@ void tjs_embed_color(TjsEmbed *embed) {
 
 void tjs_embed_value(TjsEmbed *embed) {
     /* Sanity check */
-    if (0 < (embed->flags & TJS_FLAG_TYPE_EMBED) && NULL != embed->userdata &&
+    if (NULL != embed &&
+        0 < (embed->flags & TJS_FLAG_TYPE_EMBED) && NULL != embed->userdata &&
         0 < (embed->userdata->flags & TJS_FLAG_STATE_VALUE))
     {
         TjsWidget *widget = (TjsWidget *)(embed->userdata);
@@ -245,12 +249,12 @@ void tjs_embed_value(TjsEmbed *embed) {
  **/
 
 void tjs_embed_destroy(TjsEmbed *embed) {
-    if (0 < (embed->flags & TJS_FLAG_TYPE_EMBED)) {
+    if (NULL != embed && 0 < (embed->flags & TJS_FLAG_TYPE_EMBED)) {
         /* Overwrite global string with null aka remove it */
         duk_push_null(touch.ctx);
         duk_put_global_string(touch.ctx, [embed->identifier UTF8String]);
 
-        tjs_userdata_free(embed->userdata);
+        tjs_userdata_destroy(embed->userdata);
 
         free(embed);
     }

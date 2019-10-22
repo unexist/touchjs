@@ -19,7 +19,10 @@ typedef void (*TjsObserverHandler)(CFStringRef notificationRef,
     AXUIElementRef elemRef);
 
 /* Methods */
-void tjs_observer_add(AXUIElementRef elemRef, CFStringRef notificationRef,
-    TjsObserverHandler handler);
+CFStringRef tjs_observer_translate_event_to_ref(const char *eventName);
+const char *tjs_observer_translate_ref_to_event(CFStringRef eventRef);
+AXObserverRef tjs_observer_create_from_pid(pid_t pid);
+void tjs_observer_bind(AXObserverRef observerRef, AXUIElementRef elemRef,
+    CFStringRef notificationRef, TjsObserverHandler handler);
 
 #endif /* TJS_OBSERVER_H */

@@ -27,6 +27,6 @@ TjsUserdata *tjs_userdata_get(duk_context *ctx, int flag);
 TjsUserdata *tjs_userdata_from(duk_context *ctx, int flag);
 
 void tjs_userdata_init(duk_context *ctx, TjsUserdata *userdata);
-void tjs_userdata_free(TjsUserdata *userdata);
+void tjs_userdata_destroy(TjsUserdata *userdata);
 
 #endif /* TJS_USERDATA_H */
