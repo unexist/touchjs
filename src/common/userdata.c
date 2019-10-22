@@ -26,7 +26,7 @@ static duk_ret_t tjs_userdata_dtor(duk_context *ctx) {
     if (NULL != userdata) {
         TJS_LOG_OBJ(userdata);
 
-        tjs_userdata_free(userdata);
+        tjs_userdata_destroy(userdata);
     }
 
     return 0;
@@ -116,14 +116,14 @@ void tjs_userdata_init(duk_context *ctx, TjsUserdata *userdata) {
 }
 
 /**
- * Free userdata
+ * Destroy userdata
  *
  * @param[inout]  control  A #TjsUserdata
  *
  * @return Either #TjsUserdata on success; otherwise #null
  **/
 
-void tjs_userdata_free(TjsUserdata *userdata) {
+void tjs_userdata_destroy(TjsUserdata *userdata) {
     if (NULL != userdata) {
         free(userdata);
     }

@@ -611,55 +611,6 @@ static duk_ret_t tjs_win_prototype_getpid(duk_context *ctx) {
     return 0;
 }
 
-static void tjs_win_observe_handler(CFStringRef notificationRef, AXUIElementRef elemRef) {
-    NSLog(@"%@", notificationRef);
-    char buf[50];
-
-    snprintf(buf, sizeof(buf), "\xff__%d_event_cb", tjs_attr_get_win_id(elemRef));
-
-    NSLog(@"%s", buf);
-}
-
-/**
- * Native win observe prototype method
- *
- * @param[inout]  ctx  A #duk_context
- **/
-
-static duk_ret_t tjs_win_prototype_observe(duk_context *ctx) {
-    /* Sanity check */
-    duk_require_function(ctx, -1);
-    duk_require_string(ctx, -2);
-
-    /* Get userdata */
-    TjsWin *win = (TjsWin *)tjs_userdata_get(ctx,
-        TJS_FLAG_TYPE_WIN);
-
-    if (NULL != win) {
-        TJS_LOG_OBJ(win);
-
-        if (NULL != win->elemRef) {
-            char buf[50];
-
-            snprintf(buf, sizeof(buf), "\xff__%d_%s_cb", tjs_attr_get_win_id(win->elemRef));
-
-            NSLog(@"%s", buf);
-
-            /*duk_push_this(ctx);
-            duk_swap_top(ctx, -2);
-            duk_put_prop_string(ctx, -2, TJS_SYM_CLICK_CB);
-            duk_pop(ctx);*/
-
-            tjs_observer_add(win->elemRef, kAXWindowMovedNotification,
-                tjs_win_observe_handler);
-
-           return 0;
-        }
-    }
-
-    return 0;
-}
-
 /**
  * Native win toString prototype method
  *
@@ -747,13 +698,8 @@ void tjs_win_init(duk_context *ctx) {
     duk_put_prop_string(ctx, -2, "getRole");
     duk_push_c_function(ctx, tjs_win_prototype_getsubrole, 0);
     duk_put_prop_string(ctx, -2, "getSubrole");
-
     duk_push_c_function(ctx, tjs_win_prototype_getpid, 0);
     duk_put_prop_string(ctx, -2, "getPid");
-
-    /* Observe */
-    duk_push_c_function(ctx, tjs_win_prototype_observe, 2);
-    duk_put_prop_string(ctx, -2, "observe");
 
     duk_push_c_function(ctx, tjs_win_prototype_tostring, 0);
     duk_put_prop_string(ctx, -2, "toString");

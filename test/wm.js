@@ -37,11 +37,7 @@ wins.filter(function (win) {
         win.setWH(100, 100);*/
 });
 
-/* Observer */
-wm.getWindows().filter(function (win) {
-    return /chrome/i.test(win.getTitle());
-}).forEach(function (win) {
-    win.observe("win_move", function (win) {
-        tjs_print("Ooohhhh: " + win.getFrame());
-    });
+/* Events */
+wm.observe("win_move", function (win) {
+    tjs_print("Move: id=" + win.getId() + ", frame=" + win.getFrame());
 });

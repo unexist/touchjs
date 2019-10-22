@@ -21,7 +21,59 @@
 /* Types */
 typedef struct tjs_wm_t {
     int flags;
+
+    NSMutableArray *observers;
 } TjsWM;
+
+static void tjs_wm_observe_handler(CFStringRef notificationRef, AXUIElementRef elemRef) {
+    char buf[50] = { 0 };
+    const char *eventName = tjs_observer_translate_ref_to_event(notificationRef);
+
+    TJS_LOG_OBSERVER("Handle event: name=%s", eventName);
+
+    snprintf(buf, sizeof(buf), "\xff_event_%s_cb", eventName);
+
+    /* Create new TjsWin object and add it to array */
+    duk_get_global_string(touch.ctx, "TjsWin");
+    duk_new(touch.ctx, 0);
+
+    TJS_DSTACK(touch.ctx);
+
+    /* Add window ref */
+    TjsWin *win = (TjsWin *)tjs_userdata_from(touch.ctx, TJS_FLAG_TYPE_WIN);
+
+    if (NULL != win) {
+        win->elemRef = elemRef;
+    }
+
+    TJS_DSTACK(touch.ctx);
+}
+
+static void tjs_wm_observe_init(TjsWM *wm) {
+    if (NULL != wm) {
+        wm->observers = [[NSMutableArray alloc] init];
+
+        /* Find running applications */
+        for (NSRunningApplication *app in [[NSWorkspace sharedWorkspace] runningApplications]) {
+            pid_t pid = [app processIdentifier];
+
+            AXUIElementRef elemRef = AXUIElementCreateApplication(pid);
+            AXObserverRef observerRef = tjs_observer_create_from_pid(pid);
+
+            tjs_observer_bind(observerRef, elemRef,
+                kAXWindowMovedNotification, tjs_wm_observe_handler);
+
+            [wm->observers addObject: [NSValue value: observerRef
+                withObjCType: @encode(AXObserverRef)]];
+        }
+    }
+}
+
+static void tjs_wm_observe_destroy(TjsWM *wm) {
+    if (NULL != wm) {
+
+    }
+}
 
 /**
  * Native constructor
@@ -47,6 +99,7 @@ static duk_ret_t tjs_wm_ctor(duk_context *ctx) {
     duk_pop(ctx);
 
     tjs_userdata_init(ctx, (TjsUserdata *)wm);
+    tjs_wm_observe_init(wm);
 
     TJS_LOG_OBJ(wm);
 
@@ -72,11 +125,11 @@ static duk_ret_t tjs_wm_prototype_getwindows(duk_context *ctx) {
 
         /* Find running applications */
         for (NSRunningApplication *app in [[NSWorkspace sharedWorkspace] runningApplications]) {
-            AXUIElementRef appRef = AXUIElementCreateApplication(
+            AXUIElementRef elemRef = AXUIElementCreateApplication(
                 [app processIdentifier]);
 
             CFArrayRef appWins;
-            AXUIElementCopyAttributeValues(appRef, kAXWindowsAttribute,
+            AXUIElementCopyAttributeValues(elemRef, kAXWindowsAttribute,
                 0, 100, &appWins);
 
             if (!appWins) continue;
@@ -159,12 +212,33 @@ static duk_ret_t tjs_wm_prototype_getscreens(duk_context *ctx) {
  **/
 
 static duk_ret_t tjs_wm_prototype_observe(duk_context *ctx) {
+    /* Sanity check */
+    duk_require_function(ctx, -1);
+    const char *eventName = duk_require_string(ctx, -2);
+
     /* Get userdata */
     TjsWM *wm = (TjsWM *)tjs_userdata_get(ctx,
         TJS_FLAG_TYPE_WM);
 
     if (NULL != wm) {
         TJS_LOG_OBJ(wm);
+
+        /* Check event name */
+        CFStringRef eventRef = tjs_observer_translate_event_to_ref(eventName);
+
+        if (NULL != eventRef) {
+            /* Store event handler */
+            char buf[50] = { 0 };
+
+            snprintf(buf, sizeof(buf), "\xff_event_%s_cb", eventName);
+
+            TJS_DSTACK(ctx);
+
+            duk_put_global_string(ctx, buf);
+            duk_pop(ctx);
+
+            TJS_DSTACK(ctx);
+        }
     }
 
     return 0;
