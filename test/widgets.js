@@ -9,6 +9,7 @@ var b1 = new TjsButton("Red")
         idx = 0;
         s1.setPercent(rgb[idx] * 100 / 255).setBgColor(255, 0, 0);
         l1.setFgColor.apply(l1, rgb);
+        tjs_print("Red");
     });
 
 var b2 = new TjsButton("Green")
@@ -17,6 +18,7 @@ var b2 = new TjsButton("Green")
         idx = 1;
         s1.setPercent(rgb[idx] * 100 / 255).setBgColor(0, 255, 0);
         l1.setFgColor.apply(l1, rgb);
+        tjs_print("Green");
     });
 
 var b3 = new TjsButton("Blue")
@@ -25,6 +27,7 @@ var b3 = new TjsButton("Blue")
         idx = 2;
         s1.setPercent(rgb[idx] * 100 / 255).setBgColor(0, 0, 255);
         l1.setFgColor.apply(l1, rgb);
+        tjs_print("Blue");
    });
 
 var b4 = new TjsButton("Exec")
@@ -36,11 +39,10 @@ var b4 = new TjsButton("Exec")
     });
 
 var s1 = new TjsSlider(0)
-    .bind(function (self, value) {
-        tjs_print(value);
-        tjs_print(self.getPercent());
+    .bind(function (value) {
+        tjs_print(value + "%");
 
-        rgb[idx] = parseInt(255 * self.getPercent() / 100);
+        rgb[idx] = parseInt(255 * value / 100);
 
         l1.setFgColor.apply(l1, rgb);
     });
@@ -55,12 +57,3 @@ var sc1 = new TjsScrubber()
 tjs_attach(l1);
 tjs_attach(sc1);
 tjs_attach(s1);
-
-/* Dump */
-tjs_print(l1);
-tjs_print(b1);
-tjs_print(b2);
-tjs_print(b3);
-tjs_print(b4);
-tjs_print(s1);
-tjs_print(sc1);
