@@ -20,14 +20,14 @@
   **/
 
 void tjs_callback_call(duk_context *ctx, const char *sym, int nargs) {
-    duk_get_prop_string(ctx, -1 - nargs, sym); ///< Update index based on number of arguments
+    if (duk_is_object(ctx, -1 - nargs)) {
+        duk_get_prop_string(ctx, -1 - nargs, sym); ///< Update index based on number of arguments
 
-    /* Call if callable */
-    if (duk_is_callable(ctx, -1)) {
-        duk_swap_top(ctx, -(2 + nargs)); ///< Move based on number of arguments
-        duk_pcall_method(ctx, nargs);
-        duk_pop(ctx); ///< Ignore result
-    } else {
-        duk_pop(ctx);
+        /* Call if callable */
+        if (duk_is_callable(ctx, -1)) {
+            duk_insert(ctx, -2 - nargs); ///< Insert this context based on number of arguments
+            duk_pcall_method(ctx, nargs);
+            duk_pop(ctx); ///< Ignore result
+        }
     }
 }

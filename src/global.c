@@ -78,7 +78,6 @@ static duk_ret_t tjs_global_rgb(duk_context *ctx) {
 static duk_ret_t tjs_global_attach(duk_context *ctx) {
     /* Sanity check */
     duk_require_object(ctx, -1);
-    duk_dup_top(ctx); ///< Dup to prevent next call removing it from stack
 
     /* Get userdata */
     TjsUserdata *userdata = tjs_userdata_from(ctx, TJS_FLAGS_ATTACHABLE);
@@ -99,7 +98,6 @@ static duk_ret_t tjs_global_attach(duk_context *ctx) {
 static duk_ret_t tjs_global_detach(duk_context *ctx) {
     /* Sanity check */
     duk_require_object(ctx, -1);
-    duk_dup_top(ctx); ///< Dup to prevent next call removing it from stack
 
     /* Get userdata */
     TjsUserdata *userdata = tjs_userdata_from(ctx, TJS_FLAGS_ATTACHABLE);

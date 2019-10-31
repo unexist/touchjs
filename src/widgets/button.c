@@ -65,7 +65,6 @@ static duk_ret_t tjs_button_prototype_bind(duk_context *ctx) {
         TJS_LOG_OBJ(widget);
 
         /* Store click callback */
-        duk_push_this(ctx);
         duk_swap_top(ctx, -2);
         duk_put_prop_string(ctx, -2, TJS_SYM_CLICK_CB);
         duk_pop(ctx);
@@ -92,9 +91,8 @@ static duk_ret_t tjs_button_prototype_click(duk_context *ctx) {
         TJS_LOG_OBJ(widget);
 
         /* Call click callback */
-        duk_push_this(ctx);
         tjs_callback_call(ctx, TJS_SYM_CLICK_CB, 0);
-  }
+    }
 
     /* Allow fluid.. */
     duk_push_this(ctx);

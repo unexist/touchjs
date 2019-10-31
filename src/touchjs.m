@@ -144,7 +144,7 @@ static int tjs_level(const char *str) {
 void tjs_fatal(void *userdata, const char *msg) {
     (void) userdata; ///< Not unused anymore..
 
-    TJS_LOG_DUK("Fatal error: %s", (msg ? msg : "No message"));
+    TJS_LOG_DUK("Fatal error on line: %s", (msg ? msg : "No message"));
 
     abort();
 }
