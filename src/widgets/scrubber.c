@@ -53,12 +53,13 @@ static duk_ret_t tjs_scrubber_ctor(duk_context *ctx) {
 static duk_ret_t tjs_scrubber_prototype_attach(duk_context *ctx) {
     /* Sanity check */
     duk_require_object(ctx, -1);
-    duk_dup_top(ctx); ///< Dup to prevent next call removing it from stack
 
     /* Get userdata */
     TjsUserdata *userdata = tjs_userdata_from(ctx, TJS_FLAGS_WIDGETS);
     TjsWidget *widget = (TjsWidget *)tjs_userdata_get(ctx,
         TJS_FLAG_TYPE_SCRUBBER);
+
+    duk_pop(ctx); ///< Pop this from stack
 
     if (NULL != widget) {
         TJS_LOG_OBJ(widget);
@@ -81,7 +82,6 @@ static duk_ret_t tjs_scrubber_prototype_attach(duk_context *ctx) {
 static duk_ret_t tjs_scrubber_prototype_detach(duk_context *ctx) {
     /* Sanity check */
     duk_require_object(ctx, -1);
-    duk_dup_top(ctx); ///< Dup to prevent next call removing it from stack
 
     /* Get userdata */
     TjsUserdata *userdata = tjs_userdata_from(ctx, TJS_FLAGS_WIDGETS);

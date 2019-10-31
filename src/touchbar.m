@@ -64,11 +64,11 @@ NSTouchBar *touchBar = NULL;
 /**
  * Set group touch bar
  *
- * @param[inout]  touchBar  Touchbar to add to window
+ * @param[inout]  groupTouchBar  Touchbar to add to window
  **/
 
--(void)setGroupTouchBar:(NSTouchBar*)touchBar {
-    touchBar = touchBar;
+-(void)setGroupTouchBar:(NSTouchBar*)groupTouchBar {
+    touchBar = groupTouchBar;
 }
 
 /**
@@ -94,7 +94,7 @@ NSTouchBar *touchBar = NULL;
         if (duk_is_object(touch.ctx, -1)) {
             tjs_callback_call(touch.ctx, TJS_SYM_CLICK_CB, 0);
         } else {
-            duk_pop(touch.ctx);
+            duk_pop(touch.ctx); ///< Tidy up
         }
     }
 }
@@ -133,7 +133,7 @@ NSTouchBar *touchBar = NULL;
             duk_push_int(touch.ctx, value);
             tjs_callback_call(touch.ctx, TJS_SYM_SLIDE_CB, 1);
         } else {
-            duk_pop(touch.ctx);
+            duk_pop(touch.ctx); ///< Tidy up
         }
     }
 }

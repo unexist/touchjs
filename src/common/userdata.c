@@ -10,6 +10,7 @@
  **/
 
 #include "../touchjs.h"
+
 #include "userdata.h"
 
 /**
@@ -60,7 +61,7 @@ static duk_ret_t tjs_userdata_dtor(duk_context *ctx) {
  }
 
 /**
- * Get context from duktape object on stack
+ * Get context from current duktape object
  *
  * @param[inout]  ctx   A #duk_context
  * @param[in]     flag  Flag to fetch
@@ -69,7 +70,6 @@ static duk_ret_t tjs_userdata_dtor(duk_context *ctx) {
  **/
 
 TjsUserdata *tjs_userdata_get(duk_context *ctx, int flag) {
-    /* Get userdata and clear stack */
     duk_push_this(ctx);
 
     return tjs_userdata_from(ctx, flag);
@@ -89,7 +89,7 @@ TjsUserdata *tjs_userdata_from(duk_context *ctx, int flag) {
     duk_get_prop_string(ctx, -1, TJS_SYM_USERDATA);
 
     TjsUserdata *userdata = (TjsUserdata *)duk_get_pointer(ctx, -1);
-    duk_pop_2(ctx);
+    duk_pop(ctx);
 
     TJS_LOG_OBJ(userdata);
 

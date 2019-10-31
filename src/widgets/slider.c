@@ -65,7 +65,6 @@ static duk_ret_t tjs_slider_prototype_bind(duk_context *ctx) {
         TJS_LOG_DEBUG("flags=%d", widget->flags);
 
         /* Store slide callback */
-        duk_push_this(ctx);
         duk_swap_top(ctx, -2);
         duk_put_prop_string(ctx, -2, TJS_SYM_SLIDE_CB);
         duk_pop(ctx);
@@ -107,13 +106,15 @@ static duk_ret_t tjs_slider_prototype_getpercent(duk_context *ctx) {
  **/
 
 static duk_ret_t tjs_slider_prototype_setpercent(duk_context *ctx) {
+    int percent = duk_require_int(ctx, -1);
+
     /* Get userdata */
     TjsWidget *widget = (TjsWidget *)tjs_userdata_get(ctx,
         TJS_FLAG_TYPE_SLIDER);
 
     if (NULL != widget) {
         widget->flags |= TJS_FLAG_STATE_VALUE;
-        widget->value.asInt = duk_require_int(ctx, -1);
+        widget->value.asInt = percent;
 
         TJS_LOG_DEBUG("flags=%d, percent=%d",
             widget->flags, widget->value.asInt);
