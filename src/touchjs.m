@@ -34,11 +34,12 @@
            "  -h                Show this help and exit\n" \
            "  -v                Show version info and exit\n" \
            "  -l LEVEL[,LEVEL]  Set logging levels:\n" \
-           "                      info     => General information (default)\n" \
            "                      duk      => Duktape logging\n" \
-           "                      observer => AX events\n" \
+           "                      info     => General information (default)\n" \
            "                      debug    => All debugging messages (noisy!)\n" \
            "                      error    => Log only errors (default)\n" \
+           "                      event    => AX events\n" \
+           "                      observer => AX observer handling\n" \
            "  -q                No logging output\n" \
            "  -d                Print all debugging messages\n\n" \
            "\nPlease report bugs at %s\n",
@@ -79,20 +80,23 @@ void tjs_log(int level, const char *func, int line, const char *fmt, ...) {
     va_end(ap);
 
     switch (level) {
-        case TJS_LOGLEVEL_INFO:
-            NSLog(@"[INFO] %s", buf);
-            break;
         case TJS_LOGLEVEL_DUK:
             NSLog(@"[DUK %s:%d] %s", func, line, buf);
             break;
-        case TJS_LOGLEVEL_OBSERVER:
-            NSLog(@"[OBSERVER %s:%d] %s", func, line, buf);
+        case TJS_LOGLEVEL_INFO:
+            NSLog(@"[INFO] %s", buf);
             break;
         case TJS_LOGLEVEL_DEBUG:
             NSLog(@"[DEBUG %s:%d] %s", func, line, buf);
             break;
         case TJS_LOGLEVEL_ERROR:
             NSLog(@"[ERROR %s:%d] %s", func, line, buf);
+            break;
+        case TJS_LOGLEVEL_EVENT:
+            NSLog(@"[EVENT %s:%d] %s", func, line, buf);
+            break;
+        case TJS_LOGLEVEL_OBSERVER:
+            NSLog(@"[OBSERVER %s:%d] %s", func, line, buf);
             break;
     }
 }
@@ -114,16 +118,18 @@ static int tjs_level(const char *str) {
 
     /* Parse levels */
     while (tok) {
-        if (0 == strncasecmp(tok, "info", 4)) {
-            level |= TJS_LOGLEVEL_INFO;
-        } else if (0 == strncasecmp(tok, "duk", 3)) {
+        if (0 == strncasecmp(tok, "duk", 3)) {
             level |= TJS_LOGLEVEL_DUK;
-        } else if (0 == strncasecmp(tok, "observer", 8)) {
-            level |= TJS_LOGLEVEL_OBSERVER;
+        } else if (0 == strncasecmp(tok, "info", 4)) {
+            level |= TJS_LOGLEVEL_INFO;
         } else if (0 == strncasecmp(tok, "debug", 5)) {
             level |= TJS_LOGLEVEL_DEBUG;
         } else if (0 == strncasecmp(tok, "error", 5)) {
             level |= TJS_LOGLEVEL_ERROR;
+        } else if (0 == strncasecmp(tok, "event", 5)) {
+            level |= TJS_LOGLEVEL_EVENT;
+        } else if (0 == strncasecmp(tok, "observer", 8)) {
+            level |= TJS_LOGLEVEL_OBSERVER;
         }
 
         tok = strtok(NULL, ",");
