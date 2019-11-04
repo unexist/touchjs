@@ -70,9 +70,13 @@ static duk_ret_t tjs_userdata_dtor(duk_context *ctx) {
  **/
 
 TjsUserdata *tjs_userdata_get(duk_context *ctx, int flag) {
-    duk_push_this(ctx);
+    TjsUserdata *userdata = NULL;
 
-    return tjs_userdata_from(ctx, flag);
+    duk_push_this(ctx);
+    userdata = tjs_userdata_from(ctx, flag);
+    duk_pop(ctx); ///< Tidy up
+
+    return userdata;
 }
 
 /**

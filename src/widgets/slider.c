@@ -65,6 +65,7 @@ static duk_ret_t tjs_slider_prototype_bind(duk_context *ctx) {
         TJS_LOG_DEBUG("flags=%d", widget->flags);
 
         /* Store slide callback */
+        duk_push_this(ctx);
         duk_swap_top(ctx, -2);
         duk_put_prop_string(ctx, -2, TJS_SYM_SLIDE_CB);
         duk_pop(ctx);

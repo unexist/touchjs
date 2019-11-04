@@ -59,8 +59,6 @@ static duk_ret_t tjs_scrubber_prototype_attach(duk_context *ctx) {
     TjsWidget *widget = (TjsWidget *)tjs_userdata_get(ctx,
         TJS_FLAG_TYPE_SCRUBBER);
 
-    duk_pop(ctx); ///< Pop this from stack
-
     if (NULL != widget) {
         TJS_LOG_OBJ(widget);
 
