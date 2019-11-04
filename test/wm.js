@@ -6,6 +6,8 @@ tjs_print("wm: trusted=" + wm.isTrusted());
 /* Screens */
 var screens = wm.getScreens();
 
+tjs_print(screens);
+
 screens.forEach(function (screen) {
     tjs_print("screen: frame=" + screen.getFrame());
 });
