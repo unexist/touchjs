@@ -10,6 +10,7 @@ FRAMEWORKS=-framework AppKit \
 INCLUDES=-Isrc/duktape
 CFLAGS=-mmacosx-version-min=10.12 -x objective-c
 LDFLAGS=-fobjc-link-runtime -lm $(FRAMEWORKS)
+DUKCFLAGS=-DDUK_USE_DEBUG -DDUK_USE_DEBUG_LEVEL=0
 
 SRC_TOUCHJS= \
 	src/touchjs.m \
@@ -61,17 +62,17 @@ all: $(SOURCES) $(OUT)
 	@cp "$(OUT)" "$(BUNDLE)/Contents/MacOS/"
 	@cp Info.plist "$(BUNDLE)/Contents"
 
-run: all kill
-	@open "$(BUNDLE)"
-
 $(OUT): $(OBJECTS)
 	$(CC) $(INCLUDES) $(OBJECTS) $(LDFLAGS) -o $(OUT)
+
+%/duktape.o: %/duktape.c
+	$(CC) -c $(CFLAGS) $(DUKCFLAGS) $< -o $@
 
 .m.o:
 	$(CC) -c $(CFLAGS) $< -o $@
 
 .c.o:
-	$(CC) -c $(CFLAGS) -DDUK_USE_DEBUG -DDUK_USE_DEBUG_LEVEL=0 $< -o $@
+	$(CC) -c $(CFLAGS) $< -o $@
 
 kill:
 	@pkill $(OUT) ; true
