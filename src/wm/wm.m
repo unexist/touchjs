@@ -18,11 +18,13 @@
 
 #include "../common/userdata.h"
 
+/* Globals */
+NSMutableArray *observers;
+NSMutableDictionary *observations;
+
 /* Types */
 typedef struct tjs_wm_t {
     int flags;
-
-    NSMutableArray *observers;
 } TjsWM;
 
 static void tjs_wm_observe_handler(CFStringRef notificationRef, AXUIElementRef elemRef) {
@@ -31,9 +33,24 @@ static void tjs_wm_observe_handler(CFStringRef notificationRef, AXUIElementRef e
 
     TJS_LOG_OBSERVER("Handle event: name=%s", eventName);
 
-    snprintf(buf, sizeof(buf), "\xff_event_%s_cb", eventName);
+    /* Call event handlers if any */
+    NSString *objEventName = [[NSString alloc] initWithUTF8String: eventName];
 
-    /* Create new TjsWin object and add it to array */
+    id array = [observations objectForKey: objEventName];
+
+    if (array) {
+        for (NSString *name in array) {
+            duk_get_global_string(touch.ctx, [name UTF8String]);
+
+            TJS_DSTACK(touch.ctx);
+
+            if (duk_is_callable(touch.ctx, -1)) {
+
+            }
+        }
+    }
+
+    /* Create new TjsWin object */
     duk_get_global_string(touch.ctx, "TjsWin");
     duk_new(touch.ctx, 0);
 
@@ -46,32 +63,33 @@ static void tjs_wm_observe_handler(CFStringRef notificationRef, AXUIElementRef e
         win->elemRef = elemRef;
     }
 
+    duk_pop(touch.ctx); ///< Tidy up
+
     TJS_DSTACK(touch.ctx);
 }
 
-static void tjs_wm_observe_init(TjsWM *wm) {
-    if (NULL != wm) {
-        wm->observers = [[NSMutableArray alloc] init];
+static void tjs_wm_observe_init(void) {
+    observers = [[NSMutableArray alloc] init];
+    observations = [[NSMutableDictionary alloc] init];
 
-        /* Find running applications */
-        for (NSRunningApplication *app in [[NSWorkspace sharedWorkspace] runningApplications]) {
-            pid_t pid = [app processIdentifier];
+    /* Find running applications */
+    for (NSRunningApplication *app in [[NSWorkspace sharedWorkspace] runningApplications]) {
+        pid_t pid = [app processIdentifier];
 
-            AXUIElementRef elemRef = AXUIElementCreateApplication(pid);
-            AXObserverRef observerRef = tjs_observer_create_from_pid(pid);
+        AXUIElementRef elemRef = AXUIElementCreateApplication(pid);
+        AXObserverRef observerRef = tjs_observer_create_from_pid(pid);
 
-            tjs_observer_bind(observerRef, elemRef,
-                kAXWindowMovedNotification, tjs_wm_observe_handler);
+        /* Bind events */
+        tjs_observer_bind(observerRef, elemRef,
+            kAXWindowMovedNotification, tjs_wm_observe_handler);
 
-            [wm->observers addObject: [NSValue value: observerRef
-                withObjCType: @encode(AXObserverRef)]];
-        }
+        [observers addObject: [NSValue value: observerRef
+            withObjCType: @encode(AXObserverRef)]];
     }
 }
 
 static void tjs_wm_observe_destroy(TjsWM *wm) {
     if (NULL != wm) {
-
     }
 }
 
@@ -99,7 +117,7 @@ static duk_ret_t tjs_wm_ctor(duk_context *ctx) {
     duk_pop(ctx);
 
     tjs_userdata_init(ctx, (TjsUserdata *)wm);
-    tjs_wm_observe_init(wm);
+    tjs_wm_observe_init();
 
     TJS_LOG_OBJ(wm);
 
@@ -136,12 +154,9 @@ static duk_ret_t tjs_wm_prototype_getwindows(duk_context *ctx) {
 
             /* Find windows of application */
             for (CFIndex i = 0; i < CFArrayGetCount(appWins); ++i) {
-                /* Create new TjsWin object and add it to array */
+                /* Create new TjsWin object */
                 duk_get_global_string(ctx, "TjsWin");
                 duk_new(ctx, 0);
-
-                duk_dup_top(ctx);
-                duk_put_prop_index(ctx, aryIdx, nwins++);
 
                 /* Add window ref */
                 TjsWin *win = (TjsWin *)tjs_userdata_from(ctx, TJS_FLAG_TYPE_WIN);
@@ -149,6 +164,9 @@ static duk_ret_t tjs_wm_prototype_getwindows(duk_context *ctx) {
                 if (NULL != win) {
                     win->elemRef = CFArrayGetValueAtIndex(appWins, i);
                 }
+
+                /* Finally add to result array */
+                duk_put_prop_index(ctx, aryIdx, nwins++);
             }
         }
 
@@ -176,27 +194,27 @@ static duk_ret_t tjs_wm_prototype_getscreens(duk_context *ctx) {
         int nscreens = 0;
 
         /* Find screens */
-        for (NSScreen *screen1 in [NSScreen screens]) {
-            /* Create new TjsScreen object and add it to array */
+        for (NSScreen *objScreen in [NSScreen screens]) {
+            /* Create new TjsScreen object */
             duk_get_global_string(ctx, "TjsScreen");
             duk_new(ctx, 0);
 
-            duk_dup_top(ctx);
-            duk_put_prop_index(ctx, aryIdx, nscreens++);
-
             /* Add frame*/
-            TjsScreen *screen2 = (TjsScreen *)tjs_userdata_from(
+            TjsScreen *screen = (TjsScreen *)tjs_userdata_from(
                 ctx, TJS_FLAG_TYPE_SCREEN);
 
-            if (NULL != screen2) {
+            if (NULL != screen) {
                 /* Frame */
-                NSRect frame = [screen1 frame];
+                NSRect frame = [objScreen frame];
 
-                screen2->frame.x      = NSMinX(frame);
-                screen2->frame.y      = NSMinY(frame);
-                screen2->frame.width  = NSWidth(frame);
-                screen2->frame.height = NSHeight(frame);
+                screen->frame.x      = NSMinX(frame);
+                screen->frame.y      = NSMinY(frame);
+                screen->frame.width  = NSWidth(frame);
+                screen->frame.height = NSHeight(frame);
             }
+
+            /* Finally add to result array */
+            duk_put_prop_index(ctx, aryIdx, nscreens++);
         }
 
         return 1;
@@ -222,22 +240,40 @@ static duk_ret_t tjs_wm_prototype_observe(duk_context *ctx) {
 
     if (NULL != wm) {
         TJS_LOG_OBJ(wm);
+        TJS_LOG_OBSERVER("Observe event: name=%s", eventName);
 
         /* Check event name */
         CFStringRef eventRef = tjs_observer_translate_event_to_ref(eventName);
 
         if (NULL != eventRef) {
-            /* Store event handler */
+            /* Create global name */
             char buf[50] = { 0 };
 
             snprintf(buf, sizeof(buf), "\xff_event_%s_cb", eventName);
 
-            TJS_DSTACK(ctx);
-
+            /* Store function globally */
             duk_put_global_string(ctx, buf);
             duk_pop(ctx);
 
-            TJS_DSTACK(ctx);
+            /* Add obversation */
+            NSMutableArray *keys;
+            NSString *objEventName = [[NSString alloc] initWithUTF8String: eventName];
+            NSString *objGlobalName = [[NSString alloc] initWithBytes: buf
+                length: strlen(buf) encoding: NSASCIIStringEncoding]; ///< Special handling for \xff
+
+            id obj = [observations objectForKey: objEventName];
+
+            if (obj) {
+                keys = obj;
+            } else {
+                keys = [[NSMutableArray alloc] init];
+
+                [observations setObject: keys forKey: objEventName];
+            }
+
+            [keys addObject: objGlobalName];
+
+        TJS_LOG_OBSERVER("Added event: name=%s", buf);
         }
     }
 
