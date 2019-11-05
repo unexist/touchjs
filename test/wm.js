@@ -40,6 +40,6 @@ wins.filter(function (win) {
 });
 
 /* Events */
-wm.observe("win_move", function (win) {
-    tjs_print("Move: id=" + win.getId() + ", frame=" + win.getFrame());
+wm.observe("win_move", function (win, old) {
+    tjs_print("Move: id=" + win.getId() + ", old=" + old + ", new=" + win.getFrame());
 });
