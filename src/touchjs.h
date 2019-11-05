@@ -110,6 +110,7 @@ void tjs_command_init(duk_context *ctx);
 
 /* wm.m */
 void tjs_wm_init(duk_context *ctx);
+void tjs_wm_deinit(void);
 
 /* screen.m */
 void tjs_screen_init(duk_context *ctx);

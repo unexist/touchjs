@@ -277,6 +277,7 @@ int main(int argc, char *argv[]) {
 
     /* Tidy up */
     tjs_embed_deinit();
+    tjs_wm_deinit();
     tjs_exit();
 
     return 0;
