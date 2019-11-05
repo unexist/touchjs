@@ -1,7 +1,7 @@
 /**
  * @package TouchJS
  *
- * @file WM functions
+ * @file Observer functions
  * @copyright 2019 Christoph Kappel <unexist@subforge.org>
  * @version $Id$
  *
@@ -52,7 +52,7 @@ const char *tjs_observer_translate_ref_to_event(CFStringRef eventRef) {
 static void tjs_observer_callback(AXObserverRef observerRef,
         AXUIElementRef elemRef, CFStringRef notificationRef, void *handler)
 {
-    TJS_LOG_OBSERVER("elem=%d, event=%s",
+    TJS_LOG_OBSERVER("Callback called: elem=%d, event=%s",
         tjs_attr_get_win_id(elemRef), tjs_observer_translate_ref_to_event(notificationRef));
 
     ((TjsObserverHandler)handler)(notificationRef, elemRef);
@@ -75,13 +75,13 @@ AXObserverRef tjs_observer_create_from_pid(pid_t pid) {
 }
 
 void tjs_observer_bind(AXObserverRef observerRef, AXUIElementRef elemRef,
-    CFStringRef notificationRef, TjsObserverHandler handler)
+        const char *eventName, TjsObserverHandler handler)
 {
+    CFStringRef notificationRef = tjs_observer_translate_event_to_ref(eventName);
     AXError result = AXObserverAddNotification(observerRef, elemRef,
         notificationRef, (__bridge void *)handler);
 
     if (kAXErrorSuccess == result) {
-        TJS_LOG_OBSERVER("Event added: name=%s",
-            tjs_observer_translate_ref_to_event(notificationRef));
+        TJS_LOG_OBSERVER("Notification added: name=%s", eventName);
     }
 }
