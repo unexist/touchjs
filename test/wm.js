@@ -6,8 +6,6 @@ tjs_print("wm: trusted=" + wm.isTrusted());
 /* Screens */
 var screens = wm.getScreens();
 
-tjs_print(screens);
-
 screens.forEach(function (screen) {
     tjs_print("screen: frame=" + screen.getFrame());
 });
@@ -31,15 +29,4 @@ wins.filter(function (win) {
         ", normal=" + win.isNormalWindow() +
         ", sheet=" + win.isSheet()
     );
-
-    /*if (win.isMovable())
-        win.setXY(10, 10);
-
-    if (win.isResizable())
-        win.setWH(100, 100);*/
-});
-
-/* Events */
-wm.observe("win_move", function (win, old) {
-    tjs_print("Move: id=" + win.getId() + ", old=" + old + ", new=" + win.getFrame());
 });
