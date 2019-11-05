@@ -66,7 +66,7 @@ static void tjs_wm_handle_event(CFStringRef notificationRef, AXUIElementRef elem
 
     TJS_LOG_OBSERVER("Handle event: name=%s", eventName);
 
-    /* Call event handlers if any */
+    /* Check for registered handlers */
     NSString *objEventName = [[NSString alloc] initWithUTF8String: eventName];
 
     id array = [registry objectForKey: objEventName];
@@ -78,7 +78,7 @@ static void tjs_wm_handle_event(CFStringRef notificationRef, AXUIElementRef elem
 
         tjs_wm_create_win(elemRef);
 
-        /* Call registered handlers */
+        /* Call registered handlers if any */
         for (NSString *name in array) {
             duk_get_global_string(touch.ctx, globalName);
 
@@ -369,8 +369,6 @@ void tjs_wm_init(duk_context *ctx) {
 
         [observers addObject: [NSValue value: observerRef
             withObjCType: @encode(AXObserverRef)]];
-
-        CFRelease(elemRef);
     }
 }
 
