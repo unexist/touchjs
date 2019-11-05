@@ -19,15 +19,23 @@ struct {
     int len;
     CFStringRef eventRef;
 } events[] = {
-    { "win_close", 12, kAXUIElementDestroyedNotification },
-    { "win_move", 11, kAXWindowMovedNotification },
-    { "win_resize", 13, kAXWindowResizedNotification },
     { "win_open", 11, kAXWindowCreatedNotification },
+    { "win_move", 11, kAXWindowMovedNotification },
     { "win_focus", 12, kAXFocusedWindowChangedNotification },
-    { "win_title", 12, kAXTitleChangedNotification }
+    { "win_title", 12, kAXTitleChangedNotification },
+    { "win_close", 12, kAXUIElementDestroyedNotification },
+    { "win_resize", 13, kAXWindowResizedNotification }
 };
 
 #define LENGTH(ary) (sizeof(ary) / sizeof(ary[0]))
+
+/**
+ * Translate event names to event references
+ *
+ * @param[in]  eventName  Name of the event to translate
+ *
+ * @return Found event reference; otherwise NULL
+ **/
 
 CFStringRef tjs_observer_translate_event_to_ref(const char *eventName) {
     for (int i = 0; i < LENGTH(events); i++) {
@@ -38,6 +46,14 @@ CFStringRef tjs_observer_translate_event_to_ref(const char *eventName) {
 
     return NULL;
 }
+
+/**
+ * Translate event references to event names
+ *
+ * @param[in]  eventRef  Event reference to to translate
+ *
+ * @return Found event reference; otherwise NULL
+ **/
 
 const char *tjs_observer_translate_ref_to_event(CFStringRef eventRef) {
     for (int i = 0; i < LENGTH(events); i++) {
@@ -74,11 +90,20 @@ AXObserverRef tjs_observer_create_from_pid(pid_t pid) {
     return observerRef;
 }
 
-void tjs_observer_bind(AXObserverRef observerRef, AXUIElementRef elemRef,
+ /**
+  * Bind observer notification
+  *
+  * @param[in]  observerRef  Observer reference
+  * @param[in]  appRef       Application reference
+  * @param[in]  eventName    Name of the event
+  * @param[in]  handler      Handler to call
+  **/
+
+void tjs_observer_bind(AXObserverRef observerRef, AXUIElementRef appRef,
         const char *eventName, TjsObserverHandler handler)
 {
     CFStringRef notificationRef = tjs_observer_translate_event_to_ref(eventName);
-    AXError result = AXObserverAddNotification(observerRef, elemRef,
+    AXError result = AXObserverAddNotification(observerRef, appRef,
         notificationRef, (__bridge void *)handler);
 
     if (kAXErrorSuccess == result) {

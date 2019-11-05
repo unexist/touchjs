@@ -361,11 +361,16 @@ void tjs_wm_init(duk_context *ctx) {
         /* Create observer */
         pid_t pid = [app processIdentifier];
 
-        AXUIElementRef elemRef = AXUIElementCreateApplication(pid);
+        AXUIElementRef appRef = AXUIElementCreateApplication(pid);
         AXObserverRef observerRef = tjs_observer_create_from_pid(pid);
 
         /* Bind events */
-        tjs_observer_bind(observerRef, elemRef, "win_move", tjs_wm_handle_event);
+        tjs_observer_bind(observerRef, appRef, "win_open", tjs_wm_handle_event);
+        tjs_observer_bind(observerRef, appRef, "win_move", tjs_wm_handle_event);
+        tjs_observer_bind(observerRef, appRef, "win_focus", tjs_wm_handle_event);
+        tjs_observer_bind(observerRef, appRef, "win_title", tjs_wm_handle_event);
+        tjs_observer_bind(observerRef, appRef, "win_close", tjs_wm_handle_event);
+        tjs_observer_bind(observerRef, appRef, "win_resize", tjs_wm_handle_event);
 
         [observers addObject: [NSValue value: observerRef
             withObjCType: @encode(AXObserverRef)]];
