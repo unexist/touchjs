@@ -27,7 +27,7 @@ static duk_ret_t tjs_global_print(duk_context *ctx) {
 	duk_insert(ctx, 0);
 	duk_join(ctx, duk_get_top(ctx) - 1);
 
-    TJS_LOG_DUK("%s", duk_safe_to_string(ctx, -1));
+    TJS_LOG_PRINT("%s", duk_safe_to_string(ctx, -1));
 
     return 0;
 }
