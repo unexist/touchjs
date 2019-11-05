@@ -40,6 +40,7 @@
            "                      error    => Log only errors (default)\n" \
            "                      event    => AX events\n" \
            "                      observer => AX observer handling\n" \
+           "                      print    => JS print output (default)\n" \
            "  -q                No logging output\n" \
            "  -d                Print all debugging messages\n\n" \
            "\nPlease report bugs at %s\n",
@@ -98,6 +99,9 @@ void tjs_log(int level, const char *func, int line, const char *fmt, ...) {
         case TJS_LOGLEVEL_OBSERVER:
             NSLog(@"[OBSERVER %s:%d] %s", func, line, buf);
             break;
+        case TJS_LOGLEVEL_PRINT:
+            NSLog(@"[PRINT] %s", buf);
+            break;
     }
 }
 
@@ -128,6 +132,8 @@ static int tjs_level(const char *str) {
             level |= TJS_LOGLEVEL_ERROR;
         } else if (0 == strncasecmp(tok, "event", 5)) {
             level |= TJS_LOGLEVEL_EVENT;
+        } else if (0 == strncasecmp(tok, "print", 5)) {
+            level |= TJS_LOGLEVEL_PRINT;
         } else if (0 == strncasecmp(tok, "observer", 8)) {
             level |= TJS_LOGLEVEL_OBSERVER;
         }
@@ -230,7 +236,13 @@ int main(int argc, char *argv[]) {
     [NSAutoreleasePool new];
     [NSApplication sharedApplication];
 
-    touch.loglevel = (TJS_LOGLEVEL_INFO|TJS_LOGLEVEL_DUK|TJS_LOGLEVEL_ERROR);
+    /* Set default loglevels */
+    touch.loglevel = (
+        TJS_LOGLEVEL_INFO|
+        TJS_LOGLEVEL_DUK|
+        TJS_LOGLEVEL_PRINT|
+        TJS_LOGLEVEL_ERROR
+    );
 
     tjs_embed_init();
 
