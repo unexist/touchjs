@@ -65,6 +65,15 @@ const char *tjs_observer_translate_ref_to_event(CFStringRef eventRef) {
     return NULL;
 }
 
+/**
+ * Helper to call observer callbacks
+ *
+ * @param[in]   observerRef      Observer reference
+ * @param[in]   elemRef          Element reference
+ * @param[in]   notificationRef .Notification reference
+ * @param[in]   handler          Callback handler
+ **/
+
 static void tjs_observer_callback(AXObserverRef observerRef,
         AXUIElementRef elemRef, CFStringRef notificationRef, void *handler)
 {
@@ -73,6 +82,14 @@ static void tjs_observer_callback(AXObserverRef observerRef,
 
     ((TjsObserverHandler)handler)(notificationRef, elemRef);
 }
+
+/**
+ * Create observer for given process id
+ *
+ * @param[in] . pid . Process id
+ *
+ * @return Newly created observer
+ **/
 
 AXObserverRef tjs_observer_create_from_pid(pid_t pid) {
     AXObserverRef observerRef = NULL;
