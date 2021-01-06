@@ -2,7 +2,7 @@
  * @package TouchJS
  *
  * @file Attribute functions
- * @copyright 2019 Christoph Kappel <unexist@subforge.org>
+ * @copyright (c) 2019-2021 Christoph Kappel <christoph@unexist.dev>
  * @version $Id$
  *
  * This program can be distributed under the terms of the GNU GPLv2.

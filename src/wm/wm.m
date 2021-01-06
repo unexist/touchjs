@@ -2,7 +2,7 @@
  * @package TouchJS
  *
  * @file WM functions
- * @copyright 2019 Christoph Kappel <unexist@subforge.org>
+ * @copyright (c) 2019-2021 Christoph Kappel <christoph@unexist.dev>
  * @version $Id$
  *
  * This program can be distributed under the terms of the GNU GPLv2.
@@ -19,8 +19,8 @@
 #include "../common/userdata.h"
 
 /* Globals */
-NSMutableArray *observers;
-NSMutableDictionary *registry;
+static NSMutableArray *observers;
+static NSMutableDictionary *registry;
 
 /* Types */
 typedef struct tjs_wm_t {
@@ -71,12 +71,16 @@ static void tjs_wm_handle_event(CFStringRef notificationRef, AXUIElementRef elem
 
     id array = [registry objectForKey: objEventName];
 
+        TJS_DSTACK(touch.ctx);
+
     if (array) {
         char globalName[50] = { 0 };
 
         snprintf(globalName, sizeof(globalName), "\xff_event_%s_cb", eventName);
 
         tjs_wm_create_win(elemRef);
+
+        TJS_DSTACK(touch.ctx);
 
         /* Call registered handlers if any */
         for (NSString *name in array) {

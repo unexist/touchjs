@@ -2,7 +2,7 @@
  * @package TouchJS
  *
  * @file Embed functions
- * @copyright 2019 Christoph Kappel <unexist@subforge.org>
+ * @copyright (c) 2019-2021 Christoph Kappel <christoph@unexist.dev>
  * @version $Id$
  *
  * This program can be distributed under the terms of the GNU GPLv2.
@@ -19,7 +19,7 @@
 #include "common/callback.h"
 
 /* Globals */
-NSTouchBar *touchBar = NULL;
+static NSTouchBar *touchBar = NULL;
 
 @implementation AppDelegate
 
@@ -204,10 +204,31 @@ NSTouchBar *touchBar = NULL;
     NSCustomTouchBarItem *item = [[NSCustomTouchBarItem alloc]
         initWithIdentifier: kGroupButton];
 
-    item.view = [NSButton buttonWithTitle:@"\U0001F4A9"
+    NSMutableAttributedString *aString = [[NSMutableAttributedString alloc]
+        initWithString: @"\U0001F4A9"];
+
+    NSButton *aButton = [NSButton buttonWithTitle:@"tjs"
         target: self action: @selector(present:)];
 
-    [NSTouchBarItem addSystemTrayItem:item];
+    CTFontRef aFont = CTFontCreateWithName((__bridge CFStringRef)@"AppleColorEmoji", 0.0f, NULL);
+
+    if (aFont) {
+        [aString addAttribute: (__bridge NSString *)kCTFontAttributeName
+            value: (__bridge id)aFont
+            range: NSMakeRange(0, MIN([aString length], 1))];
+
+        CFRelease(aFont);
+    }
+
+    [aButton setAttributedTitle: aString];
+
+    item.view = aButton;
+
+    //item.view = [NSButton buttonWithTitle:@"\U0001F4A9"
+    //    target: self action: @selector(present:)];
+
+
+    [NSTouchBarItem addSystemTrayItem: item];
 
     DFRElementSetControlStripPresenceForIdentifier(kGroupButton, YES);
 }
