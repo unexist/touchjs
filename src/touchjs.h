@@ -20,7 +20,7 @@
 /* Package */
 #define PKG_NAME "TouchJS"
 #define PKG_VERSION "0.0"
-#define PKG_BUGREPORT "unexist@subforge.org"
+#define PKG_BUGREPORT "christoph@unexist.dev"
 
 /* Flags */
 #define TJS_FLAG_TYPE_EMBED (1L << 0)
