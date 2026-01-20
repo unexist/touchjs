@@ -2,7 +2,7 @@
 # @package TouchJS
 #
 # @file Makefile
-# @copyright 2019-2020-2020 Christoph Kappel <unexist@subforge.org>
+# @copyright 2019-present Christoph Kappel <christoph@unexist.dev>
 # @version $Id: src/touchjs.m,v 79 2019/11/04 18:41:56 unexist $
 #
 # This program can be distributed under the terms of the GNU GPLv2.
