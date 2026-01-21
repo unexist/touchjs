@@ -6,12 +6,24 @@ Simple Touch Bar (macOS) <-> Duktape (JavaScript Engine) app
 
 [%noheader]
 |===
+a| [source,js]
+----
+include::test/observer.js[]
+----
 a| image::docs/screenshots/iterm-observer.png[]
 a| image::docs/screenshots/touchbar-observer.png[]
 
+a| [source,js]
+----
+include::test/button.js[]
+----
 a| image::docs/screenshots/iterm-button.png[]
 a| image::docs/screenshots/touchbar-button.png[]
 
+a| [source,js]
+----
+include::test/widgets.js[]
+----
 a| image::docs/screenshots/iterm-widgets.png[]
 a| image::docs/screenshots/touchbar-widgets.png[]
 |===
