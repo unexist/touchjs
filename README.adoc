@@ -1,3 +1,16 @@
 = touchjs
 
 Simple Touch Bar (macOS) <-> Duktape (JavaScript Engine) app
+
+== Screenshots
+
+|===
+a| image::docs/screenshots/item-observer.png[]
+a| image::docs/screenshots/touchbar-observer.png[]
+
+a| image::docs/screenshots/item-button.png[]
+a| image::docs/screenshots/touchbar-button.png[]
+
+a| image::docs/screenshots/item-widgets.png[]
+a| image::docs/screenshots/touchbar-widgets.png[]
+|===
